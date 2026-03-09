@@ -561,14 +561,16 @@ function ResumeCard() {
           Served from <b>/public/resume.pdf</b>.
         </div>
 
-        <button
-          style={styles.resumeBtn}
-          onClick={() =>
-            window.open(`${import.meta.env.BASE_URL}resume.pdf`, "_blank", "noopener,noreferrer")
-          }
-        >
-          View Resume PDF →
-        </button>
+        <a
+  href={`${import.meta.env.BASE_URL}resume.pdf`}
+  target="_blank"
+  rel="noopener noreferrer"
+  style={{ textDecoration: "none" }}
+>
+  <button style={styles.resumeBtn}>
+    View Resume PDF →
+  </button>
+</a>
 
         <div style={styles.noteSmall}>
           If you still see a blank PDF: right-click <b>public/resume.pdf</b> in VS Code → “Reveal in Finder” → open it.
@@ -595,6 +597,7 @@ function ResumeCard() {
   );
 }
 
+
 /* =========================
    SKILLS
 ========================= */
@@ -606,7 +609,8 @@ function Skills() {
     const link = document.createElement("link");
     link.id = id;
     link.rel = "stylesheet";
-    link.href = "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css";
+    link.href =
+      "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css";
     document.head.appendChild(link);
   }, []);
 
@@ -645,6 +649,15 @@ function Skills() {
         { label: "MongoDB", icon: "devicon-mongodb-plain" },
       ],
     },
+    {
+      title: "UI/UX & Design",
+      items: [
+        { label: "Figma", icon: "devicon-figma-plain" },
+        { label: "Adobe Express", icon: "devicon-photoshop-plain" },
+        { label: "Adobe XD", icon: "devicon-xd-plain" },
+        { label: "Canva", icon: "devicon-canva-original" },
+      ],
+    },
   ];
 
   return (
@@ -667,6 +680,9 @@ function Skills() {
     </div>
   );
 }
+
+
+
 
 /* =========================
    PROJECTS
@@ -1214,7 +1230,10 @@ function ReactionSpeedGame() {
 
 
 /* =========================
-   TYPING PRO GAME (UPGRADED) — FIXED SCORING + SOUND + CONFETTI
+   TYPING PRO GAME — FINAL (REAL WPM + LOCAL + PUBLIC SHARE)
+   Requires backend endpoints:
+     GET  /api/typing-scores?duration=15|30|60
+     POST /api/typing-scores   { name, duration, netWpm, grossWpm, accuracy }
 ========================= */
 
 function TypingProGame() {
@@ -1234,29 +1253,37 @@ function TypingProGame() {
 
   const TIMER_OPTIONS = [15, 30, 60];
 
+  // uses your existing API_BASE constant from the file:
+  // const API_BASE = "http://localhost:3001";
+
+  const LOCAL_KEY = "mannat_typing_local_v1";
+
   const [name, setName] = React.useState(() => localStorage.getItem("mannat_player_name") || "");
   const [duration, setDuration] = React.useState(30);
 
   const [running, setRunning] = React.useState(false);
   const [timeLeft, setTimeLeft] = React.useState(30);
 
-  const [target, setTarget] = React.useState(() => {
-    const i = Math.floor(Math.random() * SENTENCES.length);
-    return SENTENCES[i];
-  });
-
+  const [target, setTarget] = React.useState(() => SENTENCES[Math.floor(Math.random() * SENTENCES.length)]);
   const [typed, setTyped] = React.useState("");
-  const [results, setResults] = React.useState(null); // { wpm, accuracy, correctChars, charsTyped, position }
+
+  const [results, setResults] = React.useState(null); // { netWpm, grossWpm, accuracy, localRank, publicRank? }
   const [showBanner, setShowBanner] = React.useState(false);
 
-  const [leaderboard, setLeaderboard] = React.useState(() => {
+  // local leaderboard per duration
+  const [localBoards, setLocalBoards] = React.useState(() => {
     try {
-      const raw = localStorage.getItem("mannat_typing_leaderboard_v2");
+      const raw = localStorage.getItem(LOCAL_KEY);
       return raw ? JSON.parse(raw) : {};
     } catch {
       return {};
     }
   });
+
+  // public leaderboard per duration
+  const [publicBoards, setPublicBoards] = React.useState({}); // { t30: [...] }
+  const [publicStatus, setPublicStatus] = React.useState("idle"); // idle | loading | ok | err
+  const [publicErr, setPublicErr] = React.useState("");
 
   // fun toggles
   const [soundOn, setSoundOn] = React.useState(() => {
@@ -1266,7 +1293,6 @@ function TypingProGame() {
       return false;
     }
   });
-
   const [confettiOn, setConfettiOn] = React.useState(() => {
     try {
       const v = localStorage.getItem("mannat_tp_confetti");
@@ -1280,11 +1306,12 @@ function TypingProGame() {
   const startRef = React.useRef(0);
   const rafRef = React.useRef(null);
   const inputRef = React.useRef(null);
+  const stoppingRef = React.useRef(false);
 
-  // audio (tiny click)
+  // tiny click sound
   const audioRef = React.useRef(null);
   function playClick() {
-    if (!soundOn) return;
+    if (!soundOn || !running) return;
     try {
       if (!audioRef.current) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -1297,23 +1324,31 @@ function TypingProGame() {
       const g = ctx.createGain();
       o.type = "square";
       o.frequency.value = 520;
-      g.gain.value = 0.04;
+      g.gain.value = 0.03;
 
       o.connect(g);
       g.connect(ctx.destination);
 
       const now = ctx.currentTime;
-      g.gain.setValueAtTime(0.04, now);
+      g.gain.setValueAtTime(0.03, now);
       g.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
 
       o.start(now);
       o.stop(now + 0.035);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
-  // keep timeLeft in sync when duration changes (only when not running)
+  // cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      try {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      } catch {}
+    };
+  }, []);
+
+  // keep timeLeft in sync when duration changes (only if not running)
   React.useEffect(() => {
     if (!running) setTimeLeft(duration);
   }, [duration, running]);
@@ -1322,87 +1357,42 @@ function TypingProGame() {
     return SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
   }
 
-  // ---------- SCORING (FIXED) ----------
-  // Make scoring tolerant:
-  // - case-insensitive
-  // - remove punctuation
-  // - collapse whitespace
+  // Accuracy uses cleaned strings (punctuation ignored, spaces normalized, case-insensitive)
   const clean = (s) =>
     (s || "")
       .replace(/\r\n/g, "\n")
       .toLowerCase()
-      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'[\]\\|<>@+]/g, "") // strip punctuation
-      .replace(/\s+/g, " ") // collapse spaces
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'[\]\\|<>@+]/g, "")
+      .replace(/\s+/g, " ")
       .trim();
 
+  // REAL stats:
+  // grossWPM = rawTypedChars/5/minutes
+  // accuracy = correct(cleaned)/typed(cleaned)
+  // netWPM = grossWPM * (accuracy/100)
   function computeStats(finalTyped, elapsedSeconds) {
-    const t = clean(finalTyped);
-    const tar = clean(target);
+    const rawTyped = (finalTyped || "").replace(/\r\n/g, "\n");
     const elapsed = Math.max(0.001, elapsedSeconds || duration);
-
-    let correctChars = 0;
-    const n = Math.min(t.length, tar.length);
-    for (let i = 0; i < n; i++) {
-      if (t[i] === tar[i]) correctChars++;
-    }
-
-    const charsTyped = t.length;
-    const accuracy = charsTyped === 0 ? 0 : Math.round((correctChars / charsTyped) * 100);
-
     const minutes = elapsed / 60;
-    const wpm = charsTyped === 0 ? 0 : Math.max(0, Math.round((correctChars / 5) / minutes));
 
-    return { wpm, accuracy, correctChars, charsTyped, cleanedTyped: t, cleanedTarget: tar };
+    const t = clean(rawTyped);
+    const tar = clean(target);
+
+    let correct = 0;
+    const n = Math.min(t.length, tar.length);
+    for (let i = 0; i < n; i++) if (t[i] === tar[i]) correct++;
+
+    const typedForSpeed = rawTyped.length;
+    const typedForAccuracy = t.length;
+
+    const accuracy = typedForAccuracy === 0 ? 0 : Math.round((correct / typedForAccuracy) * 100);
+    const grossWpm = typedForSpeed === 0 ? 0 : Math.round((typedForSpeed / 5) / minutes);
+    const netWpm = Math.max(0, Math.round(grossWpm * (accuracy / 100)));
+
+    return { grossWpm, netWpm, accuracy };
   }
 
-  function startRound() {
-    if (!name.trim()) {
-      alert("Please enter your name before starting so your score can be saved.");
-      return;
-    }
-    localStorage.setItem("mannat_player_name", name);
-
-    const nextTarget = pickSentence();
-    setTarget(nextTarget);
-    setTyped("");
-    setResults(null);
-    setShowBanner(false);
-
-    setRunning(true);
-    startRef.current = performance.now();
-    setTimeLeft(duration);
-
-    setTimeout(() => inputRef.current?.focus(), 0);
-  }
-
-  function stopRound({ finished = false } = {}) {
-    const elapsed = Math.min(
-      duration,
-      Math.max(0, (performance.now() - (startRef.current || performance.now())) / 1000)
-    );
-
-    setRunning(false);
-
-    const stats = computeStats(typed, finished ? duration : elapsed);
-
-    const key = `t${duration}`;
-    const board = (leaderboard && leaderboard[key]) || [];
-
-    // estimate position if saved (descending WPM, then accuracy)
-    const player = (name || "Player").trim() || "Player";
-    const hypothetical = [
-      ...board,
-      { id: "hypo", name: player, wpm: stats.wpm, accuracy: stats.accuracy },
-    ].sort((a, b) => b.wpm - a.wpm || b.accuracy - a.accuracy);
-
-    const position =
-      hypothetical.findIndex((x) => x.name === player && x.wpm === stats.wpm && x.accuracy === stats.accuracy) + 1;
-
-    setResults({ wpm: stats.wpm, accuracy: stats.accuracy, correctChars: stats.correctChars, charsTyped: stats.charsTyped, position });
-    setShowBanner(true);
-  }
-
-  // requestAnimationFrame timer loop
+  // rAF timer loop (smooth + reliable)
   React.useEffect(() => {
     if (!running) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -1418,11 +1408,9 @@ function TypingProGame() {
       if (left <= 0) {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
-        setTimeLeft(0);
-        stopRound({ finished: true });
+        stopRound(true); // finished
         return;
       }
-
       rafRef.current = requestAnimationFrame(tick);
     };
 
@@ -1434,57 +1422,184 @@ function TypingProGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, duration]);
 
+  function startRound() {
+    if (!name.trim()) {
+      alert("Please enter your name before starting.");
+      return;
+    }
+    localStorage.setItem("mannat_player_name", name);
+
+    stoppingRef.current = false;
+    setResults(null);
+    setShowBanner(false);
+
+    setTarget(pickSentence());
+    setTyped("");
+
+    setRunning(true);
+    startRef.current = performance.now();
+    setTimeLeft(duration);
+
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function stopRound(finished) {
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
+    setTimeout(() => (stoppingRef.current = false), 0);
+
+    const elapsed = Math.max(0.001, (performance.now() - startRef.current) / 1000);
+    const usedElapsed = finished ? duration : Math.min(duration, elapsed);
+
+    setRunning(false);
+
+    const stats = computeStats(typed, usedElapsed);
+
+    // estimate local rank if saved
+    const key = `t${duration}`;
+    const local = (localBoards && localBoards[key]) || [];
+    const player = clampName(name);
+
+    const hypothetical = [...local, { name: player, netWpm: stats.netWpm, accuracy: stats.accuracy }]
+      .sort((a, b) => b.netWpm - a.netWpm || b.accuracy - a.accuracy);
+
+    const localRank =
+      hypothetical.findIndex((x) => x.name === player && x.netWpm === stats.netWpm && x.accuracy === stats.accuracy) + 1;
+
+    setResults({
+      netWpm: stats.netWpm,
+      grossWpm: stats.grossWpm,
+      accuracy: stats.accuracy,
+      localRank,
+    });
+    setShowBanner(true);
+  }
+
+  function clampName(n) {
+    const s = (n || "").trim();
+    if (!s) return "Player";
+    return s.length > 18 ? s.slice(0, 18) : s;
+  }
+
+  // live stats while running
+  const liveStats = React.useMemo(() => {
+    if (!running) return { grossWpm: 0, netWpm: 0, accuracy: 0 };
+    const elapsed = Math.max(0.001, duration - timeLeft);
+    return computeStats(typed, elapsed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typed, timeLeft, running, duration, target]);
+
   // confetti
   const [confettiBurst, setConfettiBurst] = React.useState(0);
   function popConfetti() {
     if (!confettiOn) return;
     setConfettiBurst((x) => x + 1);
-    setTimeout(() => setConfettiBurst((x) => x), 0);
   }
 
-  function saveToLeaderboard() {
+  // save locally (always available)
+  function saveLocal() {
     if (!results) return;
 
     const key = `t${duration}`;
-    const board = (leaderboard && leaderboard[key]) || [];
-    const player = (name || "Player").trim() || "Player";
-
+    const prev = (localBoards && localBoards[key]) || [];
     const item = {
-      id: `tp_${Date.now()}`,
-      name: player,
-      wpm: results.wpm,
+      id: `loc_${Date.now()}`,
+      name: clampName(name),
+      netWpm: results.netWpm,
+      grossWpm: results.grossWpm,
       accuracy: results.accuracy,
       when: new Date().toISOString(),
     };
 
-    const merged = [...board, item]
-      .sort((a, b) => b.wpm - a.wpm || b.accuracy - a.accuracy)
+    const merged = [...prev, item]
+      .sort((a, b) => b.netWpm - a.netWpm || b.accuracy - a.accuracy)
       .slice(0, 10);
 
-    const next = { ...(leaderboard || {}), [key]: merged };
-    setLeaderboard(next);
+    const next = { ...(localBoards || {}), [key]: merged };
+    setLocalBoards(next);
     try {
-      localStorage.setItem("mannat_typing_leaderboard_v2", JSON.stringify(next));
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(next));
     } catch {}
 
-    // if top 3 -> confetti
     const rank = merged.findIndex((x) => x.id === item.id) + 1;
     if (rank > 0 && rank <= 3) popConfetti();
 
-    alert(rank > 0 && rank <= 3 ? `Saved ✅ NEW TOP ${rank}! 🎉` : "Saved to leaderboard ✅");
+    alert(rank > 0 && rank <= 3 ? `Saved locally ✅ NEW TOP ${rank}! 🎉` : "Saved locally ✅");
   }
 
-  async function shareResultText() {
+  // fetch public leaderboard for selected duration
+  React.useEffect(() => {
+    let alive = true;
+    async function loadPublic() {
+      setPublicStatus("loading");
+      setPublicErr("");
+      try {
+        const res = await fetch(`${API_BASE}/api/typing-scores?duration=${duration}`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || "Failed to load public leaderboard");
+        if (!alive) return;
+
+        const key = `t${duration}`;
+        setPublicBoards((p) => ({ ...(p || {}), [key]: data.top || [] }));
+        setPublicStatus("ok");
+      } catch (e) {
+        if (!alive) return;
+        setPublicStatus("err");
+        setPublicErr(e.message || "Error");
+      }
+    }
+    loadPublic();
+    return () => {
+      alive = false;
+    };
+  }, [duration]);
+
+  // share publicly (posts to backend)
+  async function sharePublic() {
     if (!results) return;
-    const player = (name || "Player").trim() || "Player";
-    const text = `${player} scored ${results.wpm} WPM at ${results.accuracy}% accuracy on Typing PRO (${duration}s).`;
+
+    const payload = {
+      name: clampName(name),
+      duration,
+      netWpm: results.netWpm,
+      grossWpm: results.grossWpm,
+      accuracy: results.accuracy,
+    };
 
     try {
-      if (navigator.share) {
-        await navigator.share({ text });
-      } else {
+      const res = await fetch(`${API_BASE}/api/typing-scores`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to share publicly");
+
+      // refresh public board after saving
+      const res2 = await fetch(`${API_BASE}/api/typing-scores?duration=${duration}`);
+      const data2 = await res2.json().catch(() => ({}));
+      const key = `t${duration}`;
+      setPublicBoards((p) => ({ ...(p || {}), [key]: data2.top || [] }));
+
+      // confetti if you made top 3 (public)
+      const rank = (data2.top || []).findIndex((x) => x.name === payload.name && x.netWpm === payload.netWpm) + 1;
+      if (rank > 0 && rank <= 3) popConfetti();
+
+      alert("Shared publicly ✅");
+    } catch (e) {
+      alert(`Public share failed: ${e.message || "Error"}`);
+    }
+  }
+
+  async function shareText() {
+    if (!results) return;
+    const player = clampName(name);
+    const text = `${player} scored ${results.netWpm} WPM (gross ${results.grossWpm}) at ${results.accuracy}% accuracy on Typing PRO (${duration}s).`;
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else {
         await navigator.clipboard.writeText(text);
-        alert("Result copied to clipboard ✅");
+        alert("Copied to clipboard ✅");
       }
     } catch {
       try {
@@ -1497,17 +1612,9 @@ function TypingProGame() {
   }
 
   const progressPct = Math.max(0, Math.min(100, (timeLeft / duration) * 100));
-  const boardKey = `t${duration}`;
-  const board = (leaderboard && leaderboard[boardKey]) || [];
-
-  // Live stats: only meaningful while running
-  const liveStats = React.useMemo(() => {
-    if (!running) return { wpm: 0, accuracy: 0 };
-    const elapsed = Math.max(0.001, duration - timeLeft);
-    const s = computeStats(typed, elapsed);
-    return { wpm: s.wpm, accuracy: s.accuracy };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typed, timeLeft, running, duration, target]);
+  const key = `t${duration}`;
+  const localTop = (localBoards && localBoards[key]) || [];
+  const publicTop = (publicBoards && publicBoards[key]) || [];
 
   const ui = {
     container: {
@@ -1559,21 +1666,12 @@ function TypingProGame() {
       position: "relative",
       overflow: "hidden",
     },
-    banner: {
-      marginTop: 18,
-      borderRadius: 12,
-      padding: 18,
-      background: "linear-gradient(180deg,#fdeff9,#f3e8ff)",
-      border: "1px solid rgba(125,42,255,0.08)",
-    },
     card: {
       borderRadius: 12,
       padding: 12,
       background: "#fbfbfd",
       border: "1px solid rgba(0,0,0,0.02)",
     },
-
-    // input highlight
     inputWrap: {
       marginTop: 12,
       borderRadius: 16,
@@ -1585,30 +1683,6 @@ function TypingProGame() {
       boxShadow: running
         ? "0 18px 40px rgba(109,56,255,0.12), 0 0 0 6px rgba(255,120,190,0.06)"
         : "0 14px 34px rgba(0,0,0,0.04)",
-    },
-    inputTitleRow: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 10,
-      flexWrap: "wrap",
-      marginBottom: 10,
-    },
-    inputTitle: { fontWeight: 950, color: "#1a1b23", display: "flex", alignItems: "center", gap: 8 },
-    pillRow: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
-    inputPill: {
-      padding: "8px 10px",
-      borderRadius: 999,
-      background: "rgba(109,56,255,0.12)",
-      border: "1px solid rgba(109,56,255,0.18)",
-      fontWeight: 900,
-      color: "#3b1ec8",
-      fontSize: 12,
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      cursor: "pointer",
-      userSelect: "none",
     },
     textarea: {
       width: "100%",
@@ -1624,12 +1698,26 @@ function TypingProGame() {
       resize: "vertical",
       opacity: running ? 1 : 0.85,
     },
-    confettiLayer: {
-      position: "absolute",
-      inset: 0,
-      pointerEvents: "none",
-      overflow: "hidden",
-      zIndex: 5,
+    pill: {
+      padding: "8px 10px",
+      borderRadius: 999,
+      background: "rgba(109,56,255,0.12)",
+      border: "1px solid rgba(109,56,255,0.18)",
+      fontWeight: 900,
+      color: "#3b1ec8",
+      fontSize: 12,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      cursor: "pointer",
+      userSelect: "none",
+    },
+    banner: {
+      marginTop: 18,
+      borderRadius: 12,
+      padding: 18,
+      background: "linear-gradient(180deg,#fdeff9,#f3e8ff)",
+      border: "1px solid rgba(125,42,255,0.08)",
     },
   };
 
@@ -1654,13 +1742,15 @@ function TypingProGame() {
             background: linear-gradient(180deg, rgba(109,56,255,0.95), rgba(255,120,190,0.9));
             animation: confettiFall 1.2s ease-in forwards;
             filter: drop-shadow(0 10px 18px rgba(109,56,255,0.15));
+            pointer-events: none;
+            z-index: 5;
           }
         `}
       </style>
 
-      {/* Confetti burst */}
+      {/* Confetti */}
       {confettiOn && confettiBurst > 0 && (
-        <div style={ui.confettiLayer}>
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
           {Array.from({ length: 22 }).map((_, i) => {
             const left = (i * 17) % 100;
             const drift = ((i % 2 === 0 ? 1 : -1) * (20 + (i % 6) * 8));
@@ -1688,7 +1778,7 @@ function TypingProGame() {
         <div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>Typing PRO</div>
           <div style={{ color: "#6b7280", marginTop: 6 }}>
-            Pick a timer, hit Start, then type. Scoring ignores punctuation + is case-insensitive.
+            Speed works even if you don’t finish. Accuracy ignores punctuation + is case-insensitive.
           </div>
         </div>
 
@@ -1726,7 +1816,7 @@ function TypingProGame() {
           </div>
 
           <button
-            onClick={() => (running ? stopRound({ finished: false }) : startRound())}
+            onClick={() => (running ? stopRound(false) : startRound())}
             style={{
               padding: "10px 16px",
               borderRadius: 12,
@@ -1767,12 +1857,11 @@ function TypingProGame() {
                     animation: "targetPulse 2.6s infinite",
                   }}
                 />
-                {/* Visual highlight still strict (fine), scoring is tolerant */}
                 <div style={{ position: "relative", zIndex: 2, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
-                  {(target || "").split("").map((ch, i) => {
-                    const typedChar = (typed || "")[i];
+                  {target.split("").map((ch, i) => {
+                    const typedChar = typed[i];
                     const correct =
-                      typedChar !== undefined && typedChar !== null && typedChar !== ""
+                      typedChar !== undefined && typedChar !== ""
                         ? String(typedChar).toLowerCase() === String(ch).toLowerCase()
                         : null;
 
@@ -1790,17 +1879,16 @@ function TypingProGame() {
             </div>
           </div>
 
-          {/* input area */}
           <div style={ui.inputWrap}>
-            <div style={ui.inputTitleRow}>
-              <div style={ui.inputTitle}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+              <div style={{ fontWeight: 950, color: "#1a1b23", display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 18 }}>⌨️</span>
                 <span>Type here</span>
               </div>
 
-              <div style={ui.pillRow}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <div
-                  style={ui.inputPill}
+                  style={ui.pill}
                   onClick={() => {
                     const next = !soundOn;
                     setSoundOn(next);
@@ -1815,7 +1903,7 @@ function TypingProGame() {
                 </div>
 
                 <div
-                  style={ui.inputPill}
+                  style={ui.pill}
                   onClick={() => {
                     const next = !confettiOn;
                     setConfettiOn(next);
@@ -1829,7 +1917,7 @@ function TypingProGame() {
                   <span>{confettiOn ? "Confetti ON" : "Confetti OFF"}</span>
                 </div>
 
-                <div style={{ ...ui.inputPill, cursor: "default" }}>
+                <div style={{ ...ui.pill, cursor: "default" }}>
                   <span>✨</span>
                   <span>{running ? "Go go go!" : "Press Start first"}</span>
                 </div>
@@ -1842,24 +1930,27 @@ function TypingProGame() {
               value={typed}
               onChange={(e) => {
                 setTyped(e.target.value);
-                // play click only while running
-                if (running) playClick();
+                playClick();
               }}
               disabled={!running}
               style={ui.textarea}
             />
 
             <div style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>
-              Scoring ignores punctuation (.,;: etc) + is case-insensitive. Spaces are normalized.
+              Gross WPM = raw typing speed. Net WPM = Gross × Accuracy.
             </div>
           </div>
         </div>
 
-        <div style={{ width: 260, flex: "0 0 260px" }}>
+        {/* Right sidebar cards */}
+        <div style={{ width: 300, flex: "0 0 300px" }}>
           <div style={ui.card}>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>WPM</div>
-            <div style={{ fontWeight: 900, fontSize: 24, marginTop: 6 }}>
-              {results ? results.wpm : liveStats.wpm}
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Net WPM</div>
+            <div style={{ fontWeight: 900, fontSize: 26, marginTop: 6 }}>
+              {results ? results.netWpm : liveStats.netWpm}
+            </div>
+            <div style={{ marginTop: 6, color: "#6b7280", fontSize: 12 }}>
+              Gross: {results ? results.grossWpm : liveStats.grossWpm} WPM
             </div>
           </div>
 
@@ -1867,7 +1958,7 @@ function TypingProGame() {
 
           <div style={ui.card}>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Accuracy</div>
-            <div style={{ fontWeight: 900, fontSize: 24, marginTop: 6 }}>
+            <div style={{ fontWeight: 900, fontSize: 26, marginTop: 6 }}>
               {results ? `${results.accuracy}%` : `${liveStats.accuracy}%`}
             </div>
           </div>
@@ -1876,18 +1967,44 @@ function TypingProGame() {
 
           <div style={{ borderRadius: 12, padding: 12, background: "#fff", border: "1px solid rgba(0,0,0,0.03)" }}>
             <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
-              Leaderboard (top • {duration}s)
+              Local Leaderboard (top • {duration}s)
             </div>
-            {board.length === 0 ? (
-              <div style={{ color: "#9aa0ad" }}>No scores yet — be the first!</div>
+            {localTop.length === 0 ? (
+              <div style={{ color: "#9aa0ad" }}>No local scores yet.</div>
             ) : (
-              board.map((it, idx) => (
+              localTop.map((it, idx) => (
                 <div key={it.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
                   <div style={{ fontWeight: 900 }}>#{idx + 1} {it.name}</div>
-                  <div>{it.wpm} WPM</div>
+                  <div>{it.netWpm} WPM</div>
                 </div>
               ))
             )}
+          </div>
+
+          <div style={{ height: 10 }} />
+
+          <div style={{ borderRadius: 12, padding: 12, background: "#fff", border: "1px solid rgba(0,0,0,0.03)" }}>
+            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
+              Public Leaderboard (top • {duration}s)
+            </div>
+
+            {publicStatus === "loading" && <div style={{ color: "#9aa0ad" }}>Loading…</div>}
+            {publicStatus === "err" && <div style={{ color: "#b91c1c" }}>Error: {publicErr}</div>}
+
+            {publicStatus !== "loading" && publicTop.length === 0 ? (
+              <div style={{ color: "#9aa0ad" }}>No public scores yet.</div>
+            ) : (
+              publicTop.map((it, idx) => (
+                <div key={`${it._id || it.id || idx}`} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
+                  <div style={{ fontWeight: 900 }}>#{idx + 1} {it.name}</div>
+                  <div>{it.netWpm} WPM</div>
+                </div>
+              ))
+            )}
+
+            <div style={{ marginTop: 10, color: "#6b7280", fontSize: 12 }}>
+              Public scores are stored on your API + MongoDB.
+            </div>
           </div>
         </div>
       </div>
@@ -1896,16 +2013,19 @@ function TypingProGame() {
       {showBanner && results && (
         <div style={ui.banner}>
           <div style={{ fontWeight: 900, fontSize: 18 }}>⏰ TIME OVER</div>
+
           <div style={{ marginTop: 8, fontSize: 16 }}>
-            You scored <strong>{results.wpm} WPM</strong> at <strong>{results.accuracy}%</strong> accuracy.
+            Net: <strong>{results.netWpm} WPM</strong> (Gross {results.grossWpm}) • Accuracy{" "}
+            <strong>{results.accuracy}%</strong>
           </div>
+
           <div style={{ marginTop: 8, color: "#374151" }}>
-            Estimated position: <strong>#{results.position}</strong>
+            Estimated local position: <strong>#{results.localRank}</strong>
           </div>
 
           <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button
-              onClick={shareResultText}
+              onClick={shareText}
               style={{
                 padding: "10px 12px",
                 borderRadius: 12,
@@ -1918,8 +2038,8 @@ function TypingProGame() {
 
             <button
               onClick={() => {
-                const ok = confirm("Save this score to the leaderboard? (local-only, saved in this browser)");
-                if (ok) saveToLeaderboard();
+                const ok = confirm("Save this score locally (this browser only)?");
+                if (ok) saveLocal();
               }}
               style={{
                 padding: "10px 14px",
@@ -1930,7 +2050,24 @@ function TypingProGame() {
                 border: "none",
               }}
             >
-              Save to leaderboard
+              Save locally
+            </button>
+
+            <button
+              onClick={() => {
+                const ok = confirm("Share this score PUBLICLY to everyone (stored in MongoDB)?");
+                if (ok) sharePublic();
+              }}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 12,
+                background: "linear-gradient(90deg,#0b1020,#14183a)",
+                color: "white",
+                fontWeight: 900,
+                border: "none",
+              }}
+            >
+              Share to public leaderboard
             </button>
 
             <button
