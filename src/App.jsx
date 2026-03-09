@@ -185,7 +185,6 @@ function QATestLabPage() {
                     radial-gradient(900px 600px at 70% 10%, rgba(255,120,190,0.14), transparent 55%),
                     linear-gradient(180deg, #f6f7fb, #f1f2f9);
       }
-
       .qaHeroShell {
         position: relative;
         width: min(1100px, calc(100% - 44px));
@@ -202,20 +201,17 @@ function QATestLabPage() {
         box-shadow: 0 22px 55px rgba(109,56,255,0.10);
         overflow: hidden;
       }
-
       @keyframes qaGradientShift {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
       }
-
       .qaParticles {
         position: absolute;
         inset: 0;
         pointer-events: none;
         opacity: 0.85;
       }
-
       .qaParticle {
         position: absolute;
         width: 10px;
@@ -225,13 +221,11 @@ function QATestLabPage() {
         filter: blur(0.2px);
         animation: qaFloat linear infinite;
       }
-
       @keyframes qaFloat {
         0% { transform: translate3d(0, 0, 0); opacity: 0.25; }
         20% { opacity: 0.8; }
         100% { transform: translate3d(0, -120vh, 0); opacity: 0.0; }
       }
-
       .qaMiniCardBtn {
         width: 100%;
         text-align: left;
@@ -331,12 +325,7 @@ function QATestLabPage() {
           </button>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a
-              style={styles.primaryBtn}
-              href="https://github.com/mmannat"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a style={styles.primaryBtn} href="https://github.com/mmannat" target="_blank" rel="noreferrer">
               GitHub
             </a>
             <a
@@ -359,29 +348,17 @@ function QATestLabPage() {
             </div>
 
             <div style={styles.qaHeroGrid}>
-              <button
-                className="qaMiniCardBtn"
-                data-active={active === "api"}
-                onClick={() => setActive("api")}
-              >
+              <button className="qaMiniCardBtn" data-active={active === "api"} onClick={() => setActive("api")}>
                 <div style={styles.qaMiniTitle}>API Checks</div>
                 <div style={styles.qaMiniBody}>Pass/Fail results + response time trend.</div>
               </button>
 
-              <button
-                className="qaMiniCardBtn"
-                data-active={active === "bugs"}
-                onClick={() => setActive("bugs")}
-              >
+              <button className="qaMiniCardBtn" data-active={active === "bugs"} onClick={() => setActive("bugs")}>
                 <div style={styles.qaMiniTitle}>Bug Cards</div>
                 <div style={styles.qaMiniBody}>Severity, status, and reproduction steps.</div>
               </button>
 
-              <button
-                className="qaMiniCardBtn"
-                data-active={active === "runs"}
-                onClick={() => setActive("runs")}
-              >
+              <button className="qaMiniCardBtn" data-active={active === "runs"} onClick={() => setActive("runs")}>
                 <div style={styles.qaMiniTitle}>Automation Runs</div>
                 <div style={styles.qaMiniBody}>Recent suites, duration, and failures.</div>
               </button>
@@ -429,13 +406,7 @@ function NotFound() {
 
 function SideBtn({ label, active, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        ...styles.sideBtn,
-        ...(active ? styles.sideBtnActive : null),
-      }}
-    >
+    <button onClick={onClick} style={{ ...styles.sideBtn, ...(active ? styles.sideBtnActive : null) }}>
       {label}
     </button>
   );
@@ -443,13 +414,7 @@ function SideBtn({ label, active, onClick }) {
 
 function TopTab({ label, active, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        ...styles.topTab,
-        ...(active ? styles.topTabActive : null),
-      }}
-    >
+    <button onClick={onClick} style={{ ...styles.topTab, ...(active ? styles.topTabActive : null) }}>
       {label}
     </button>
   );
@@ -481,9 +446,9 @@ function AboutCard({ onJump }) {
         </div>
 
         <div style={styles.aboutText}>
-          I’m experienced in writing comprehensive test plans, designing clear procedures, and
-          executing embedded, system, and integration tests. I’m highly accountable, detail-oriented,
-          and I bring a calm, structured approach to debugging and validation.
+          I’m experienced in writing comprehensive test plans, designing clear procedures, and executing embedded,
+          system, and integration tests. I’m highly accountable, detail-oriented, and I bring a calm, structured
+          approach to debugging and validation.
         </div>
 
         <div style={styles.aboutPillsRow}>
@@ -572,9 +537,9 @@ function EducationCard() {
           <div style={styles.eduMini}>
             <div style={styles.eduMiniLabel}>Highlights</div>
             <div style={styles.eduMiniText}>
-              Built strong fundamentals in software engineering and problem-solving while working on
-              projects across web development, mobile programming, and design. Currently expanding my
-              skills in AI and Generative AI with a focus on practical, portfolio-ready applications.
+              Built strong fundamentals in software engineering and problem-solving while working on projects across
+              web development, mobile programming, and design. Currently expanding my skills in AI and Generative AI
+              with a focus on practical, portfolio-ready applications.
             </div>
           </div>
         </div>
@@ -584,7 +549,7 @@ function EducationCard() {
 }
 
 /* =========================
-   RESUME
+   RESUME (FIXED)
 ========================= */
 
 function ResumeCard() {
@@ -598,14 +563,16 @@ function ResumeCard() {
 
         <button
           style={styles.resumeBtn}
-          onClick={() => window.open("/resume.pdf", "_blank", "noopener,noreferrer")}
+          onClick={() =>
+            window.open(`${import.meta.env.BASE_URL}resume.pdf`, "_blank", "noopener,noreferrer")
+          }
         >
           View Resume PDF →
         </button>
 
         <div style={styles.noteSmall}>
-          If you still see a blank PDF: right-click <b>public/resume.pdf</b> in VS Code → “Reveal in
-          Finder” → open it. If it’s blank there too, the file is empty/corrupted and needs re-export.
+          If you still see a blank PDF: right-click <b>public/resume.pdf</b> in VS Code → “Reveal in Finder” → open it.
+          If it’s blank there too, the file is empty/corrupted and needs re-export.
         </div>
       </div>
 
@@ -833,12 +800,7 @@ function Contact() {
         <div style={styles.reachDivider} />
 
         <div style={styles.reachBtns}>
-          <a
-            href="https://github.com/mmannat"
-            target="_blank"
-            rel="noreferrer"
-            style={{ ...styles.primaryBtn, textDecoration: "none" }}
-          >
+          <a href="https://github.com/mmannat" target="_blank" rel="noreferrer" style={{ ...styles.primaryBtn, textDecoration: "none" }}>
             GitHub
           </a>
           <a
@@ -858,33 +820,18 @@ function Contact() {
         <div style={styles.formRow}>
           <div style={styles.field}>
             <div style={styles.label}>Name</div>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              style={styles.input}
-            />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={styles.input} />
           </div>
 
           <div style={styles.field}>
             <div style={styles.label}>Email</div>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@email.com"
-              style={styles.input}
-            />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" style={styles.input} />
           </div>
         </div>
 
         <div style={styles.field}>
           <div style={styles.label}>Message</div>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Write your message..."
-            style={styles.textarea}
-          />
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Write your message..." style={styles.textarea} />
         </div>
 
         <div style={styles.formBottom}>
@@ -916,9 +863,9 @@ function Contact() {
 ========================= */
 
 function PlaygroundMini() {
-  const [mode, setMode] = useState("arcade"); // arcade | lab | reaction | typing
+  const [mode, setMode] = useState("reaction"); // reaction | typing
 
-  const tab = (label, key) => (
+  const tab = (label, key, icon) => (
     <button
       onClick={() => setMode(key)}
       style={{
@@ -926,6 +873,7 @@ function PlaygroundMini() {
         ...(mode === key ? styles.pgModeTabActive : null),
       }}
     >
+      <span style={{ marginRight: 8 }}>{icon}</span>
       {label}
     </button>
   );
@@ -936,18 +884,17 @@ function PlaygroundMini() {
         <div>
           <div style={styles.pgTitle}>Mini Arcade</div>
           <div style={styles.pgSub}>
-            Pick a mode: Creative Lab, Reaction Speed, or Typing PRO. Everything saves locally (no publish yet).
+            Pick a game, enter your name, and play. Your score only shows on the leaderboard if you
+            choose to share it.
           </div>
         </div>
 
         <div style={styles.pgModeTabs}>
-          {tab("Creative Lab", "lab")}
-          {tab("Reaction Speed", "reaction")}
-          {tab("Typing PRO", "typing")}
+          {tab("Reaction Speed", "reaction", "⚡")}
+          {tab("Typing PRO", "typing", "⌨️")}
         </div>
       </div>
 
-      {mode === "lab" && <CreativeLab />}
       {mode === "reaction" && <ReactionSpeedGame />}
       {mode === "typing" && <TypingProGame />}
     </div>
@@ -955,460 +902,71 @@ function PlaygroundMini() {
 }
 
 /* =========================
-   CREATIVE LAB (CANVAS)
+   LEADERBOARD HELPERS
 ========================= */
 
-function CreativeLab() {
-  const canvasRef = React.useRef(null);
-  const containerRef = React.useRef(null);
-
-  const [tool, setTool] = useState("pen"); // pen | highlighter | eraser | shape | text
-  const [shapeType, setShapeType] = useState("circle"); // circle | square | triangle | star
-  const [color, setColor] = useState("#6d38ff");
-  const [bg, setBg] = useState("#0b1020");
-  const [size, setSize] = useState(6);
-
-  const [history, setHistory] = useState([]);
-  const [redoStack, setRedoStack] = useState([]);
-
-  const [strokes, setStrokes] = useState([]);
-  const [objects, setObjects] = useState([]);
-
-  const [gallery, setGallery] = useState(() => {
-    try {
-      const raw = localStorage.getItem("mannat_playground_gallery");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const drawingRef = React.useRef(false);
-  const currentStrokeRef = React.useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const wrap = containerRef.current;
-    if (!canvas || !wrap) return;
-
-    const resize = () => {
-      const rect = wrap.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-
-      canvas.width = Math.floor(rect.width * dpr);
-      canvas.height = Math.floor(rect.height * dpr);
-
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-
-      const ctx = canvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      redraw();
-    };
-
-    const ro = new ResizeObserver(resize);
-    ro.observe(wrap);
-    resize();
-
-    return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bg, strokes, objects]);
-
-  const redraw = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
-
-    drawGrid(ctx);
-
-    for (const obj of objects) drawObject(ctx, obj);
-    for (const s of strokes) drawStroke(ctx, s);
-  };
-
-  const drawGrid = (ctx) => {
-    ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.lineWidth = 1;
-
-    const step = 28;
-    const w = ctx.canvas.width / (window.devicePixelRatio || 1);
-    const h = ctx.canvas.height / (window.devicePixelRatio || 1);
-
-    for (let x = 0; x <= w; x += step) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= h; y += step) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-    ctx.restore();
-  };
-
-  const drawStroke = (ctx, s) => {
-    if (!s.points || s.points.length < 2) return;
-
-    ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    if (s.tool === "eraser") {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = Math.max(10, s.size * 2);
-      ctx.globalAlpha = 1;
-    } else if (s.tool === "highlighter") {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = s.color;
-      ctx.lineWidth = s.size + 10;
-      ctx.globalAlpha = 0.22;
-    } else {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = s.color;
-      ctx.lineWidth = s.size;
-      ctx.globalAlpha = 1;
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(s.points[0].x, s.points[0].y);
-    for (let i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
-    ctx.stroke();
-    ctx.restore();
-  };
-
-  const drawObject = (ctx, obj) => {
-    ctx.save();
-    ctx.globalCompositeOperation = "source-over";
-
-    if (obj.type === "text") {
-      ctx.fillStyle = obj.color;
-      ctx.font = `800 ${Math.max(14, obj.h)}px system-ui`;
-      ctx.fillText(obj.text || "Text", obj.x, obj.y);
-      ctx.restore();
-      return;
-    }
-
-    ctx.fillStyle = obj.color;
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
-    ctx.lineWidth = 2;
-
-    if (obj.type === "circle") {
-      const r = Math.min(obj.w, obj.h) / 2;
-      ctx.beginPath();
-      ctx.arc(obj.x + r, obj.y + r, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    if (obj.type === "square") {
-      ctx.beginPath();
-      ctx.roundRect(obj.x, obj.y, obj.w, obj.h, 14);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    if (obj.type === "triangle") {
-      ctx.beginPath();
-      ctx.moveTo(obj.x + obj.w / 2, obj.y);
-      ctx.lineTo(obj.x + obj.w, obj.y + obj.h);
-      ctx.lineTo(obj.x, obj.y + obj.h);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    if (obj.type === "star") {
-      drawStar(ctx, obj.x + obj.w / 2, obj.y + obj.h / 2, 5, obj.w / 2, obj.w / 4);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    ctx.restore();
-  };
-
-  const drawStar = (ctx, cx, cy, spikes, outerRadius, innerRadius) => {
-    let rot = (Math.PI / 2) * 3;
-    const step = Math.PI / spikes;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - outerRadius);
-    for (let i = 0; i < spikes; i++) {
-      ctx.lineTo(cx + Math.cos(rot) * outerRadius, cy + Math.sin(rot) * outerRadius);
-      rot += step;
-      ctx.lineTo(cx + Math.cos(rot) * innerRadius, cy + Math.sin(rot) * innerRadius);
-      rot += step;
-    }
-    ctx.lineTo(cx, cy - outerRadius);
-    ctx.closePath();
-  };
-
-  const getPoint = (e) => {
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX ?? e.touches?.[0]?.clientX) - rect.left;
-    const y = (e.clientY ?? e.touches?.[0]?.clientY) - rect.top;
-    return { x, y };
-  };
-
-  const pushHistory = (nextStrokes, nextObjects) => {
-    setHistory((h) => [...h, { strokes: nextStrokes, objects: nextObjects }]);
-    setRedoStack([]);
-  };
-
-  const onPointerDown = (e) => {
-    e.preventDefault();
-    const p = getPoint(e);
-
-    if (tool === "shape") {
-      const w = 120;
-      const h = 120;
-      const obj = { type: shapeType, x: p.x - w / 2, y: p.y - h / 2, w, h, color };
-      const nextObjects = [...objects, obj];
-      setObjects(nextObjects);
-      pushHistory(strokes, nextObjects);
-      return;
-    }
-
-    if (tool === "text") {
-      const text = prompt("Type your text:");
-      if (!text) return;
-      const obj = { type: "text", x: p.x, y: p.y, w: 0, h: 22, color, text };
-      const nextObjects = [...objects, obj];
-      setObjects(nextObjects);
-      pushHistory(strokes, nextObjects);
-      return;
-    }
-
-    drawingRef.current = true;
-    const s = { tool, color, size, points: [p] };
-    currentStrokeRef.current = s;
-    setStrokes((prev) => [...prev, s]);
-  };
-
-  const onPointerMove = (e) => {
-    if (!drawingRef.current) return;
-    const p = getPoint(e);
-    const s = currentStrokeRef.current;
-    if (!s) return;
-
-    s.points.push(p);
-    setStrokes((prev) => [...prev.slice(0, -1), s]);
-  };
-
-  const onPointerUp = () => {
-    if (!drawingRef.current) return;
-    drawingRef.current = false;
-
-    const finalStroke = currentStrokeRef.current;
-    currentStrokeRef.current = null;
-    if (!finalStroke) return;
-
-    pushHistory([...strokes], [...objects]);
-  };
-
-  const undo = () => {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
-    setRedoStack((r) => [{ strokes, objects }, ...r]);
-    setStrokes(prev.strokes);
-    setObjects(prev.objects);
-    setHistory((h) => h.slice(0, -1));
-  };
-
-  const redo = () => {
-    if (redoStack.length === 0) return;
-    const next = redoStack[0];
-    setHistory((h) => [...h, { strokes, objects }]);
-    setStrokes(next.strokes);
-    setObjects(next.objects);
-    setRedoStack((r) => r.slice(1));
-  };
-
-  const clearAll = () => {
-    pushHistory(strokes, objects);
-    setStrokes([]);
-    setObjects([]);
-  };
-
-  const saveToGallery = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const dataUrl = canvas.toDataURL("image/png");
-    const item = {
-      id: `art_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      dataUrl,
-      title: `Creation ${gallery.length + 1}`,
-    };
-
-    const next = [item, ...gallery].slice(0, 12);
-    setGallery(next);
-    localStorage.setItem("mannat_playground_gallery", JSON.stringify(next));
-    alert("Saved to gallery ✅");
-  };
-
-  const pill = (label, active, onClick) => (
-    <button
-      onClick={onClick}
-      style={{
-        ...styles.pgToolPill,
-        ...(active ? styles.pgToolPillActive : null),
-      }}
-    >
-      {label}
-    </button>
-  );
-
-  return (
-    <div style={styles.pgGrid}>
-      {/* Left: Canvas + tools */}
-      <div style={styles.pgStudioCard}>
-        <div style={styles.pgToolbar}>
-          <div style={styles.pgToolbarRow}>
-            {pill("Pen", tool === "pen", () => setTool("pen"))}
-            {pill("Highlighter", tool === "highlighter", () => setTool("highlighter"))}
-            {pill("Eraser", tool === "eraser", () => setTool("eraser"))}
-            {pill("Shapes", tool === "shape", () => setTool("shape"))}
-            {pill("Text", tool === "text", () => setTool("text"))}
-          </div>
-
-          <div style={styles.pgToolbarRow}>
-            <div style={styles.pgControl}>
-              <div style={styles.pgControlLabel}>Brush</div>
-              <input
-                type="range"
-                min="2"
-                max="18"
-                value={size}
-                onChange={(e) => setSize(Number(e.target.value))}
-                style={{ width: 180 }}
-              />
-            </div>
-
-            <div style={styles.pgControl}>
-              <div style={styles.pgControlLabel}>Color</div>
-              <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
-            </div>
-
-            <div style={styles.pgControl}>
-              <div style={styles.pgControlLabel}>Background</div>
-              <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} />
-            </div>
-
-            {tool === "shape" && (
-              <div style={styles.pgControl}>
-                <div style={styles.pgControlLabel}>Shape</div>
-                <select
-                  value={shapeType}
-                  onChange={(e) => setShapeType(e.target.value)}
-                  style={styles.pgSelect}
-                >
-                  <option value="circle">Circle</option>
-                  <option value="square">Square</option>
-                  <option value="triangle">Triangle</option>
-                  <option value="star">Star</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div style={styles.pgHintRow}>
-            <span style={styles.pgHintPill}>Tip: choose Shapes then click on canvas to drop one.</span>
-            <span style={styles.pgHintPill}>Tip: choose Text then click canvas.</span>
-          </div>
-
-          <div style={styles.pgActionsRow}>
-            <button style={styles.pgSoftBtn} onClick={undo} disabled={history.length === 0}>
-              Undo
-            </button>
-            <button style={styles.pgSoftBtn} onClick={redo} disabled={redoStack.length === 0}>
-              Redo
-            </button>
-            <button style={styles.pgSoftBtn} onClick={clearAll}>
-              Clear
-            </button>
-            <button style={styles.primaryBtn} onClick={saveToGallery}>
-              Save
-            </button>
-          </div>
-        </div>
-
-        <div style={styles.pgCanvasShell}>
-          <div ref={containerRef} style={styles.pgCanvasWrap}>
-            <canvas
-              ref={canvasRef}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerLeave={onPointerUp}
-              style={styles.pgCanvas}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Right: Gallery */}
-      <div style={styles.pgGalleryCard}>
-        <div style={styles.pgGalleryTitle}>Community Wall</div>
-        <div style={styles.pgGallerySub}>Saved creations show up here (local only).</div>
-
-        {gallery.length === 0 ? (
-          <div style={styles.pgEmpty}>
-            No creations yet — draw something and hit <b>Save</b>.
-          </div>
-        ) : (
-          <div style={styles.pgGalleryGrid}>
-            {gallery.map((g) => (
-              <button
-                key={g.id}
-                style={styles.pgThumbBtn}
-                onClick={() => window.open(g.dataUrl, "_blank", "noopener,noreferrer")}
-                title="Open full size"
-              >
-                <img src={g.dataUrl} alt={g.title} style={styles.pgThumbImg} />
-                <div style={styles.pgThumbMeta}>
-                  <div style={styles.pgThumbTitle}>{g.title}</div>
-                  <div style={styles.pgThumbDate}>{new Date(g.createdAt).toLocaleDateString()}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div style={styles.pgFooterNote}>
-          (Publish/approval can be added later with a backend route + admin page.)
-        </div>
-      </div>
-    </div>
-  );
+function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
 }
+
+function saveJSON(key, val) {
+  localStorage.setItem(key, JSON.stringify(val));
+}
+
+function clampName(name) {
+  const n = (name || "").trim();
+  if (!n) return "Player";
+  return n.length > 18 ? n.slice(0, 18) : n;
+}
+
+function prettyMs(ms) {
+  return `${ms} ms`;
+}
+
+function prettyWpm(wpm) {
+  return `${wpm} WPM`;
+}
+
+function rankOf(list, predicate) {
+  const idx = list.findIndex(predicate);
+  return idx >= 0 ? idx + 1 : null;
+}
+
+function Medal({ rank }) {
+  if (rank === 1) return <span title="1st">🥇</span>;
+  if (rank === 2) return <span title="2nd">🥈</span>;
+  if (rank === 3) return <span title="3rd">🥉</span>;
+  return <span style={{ opacity: 0.7 }}>🏁</span>;
+}
+
 /* =========================
-   REACTION SPEED GAME
+   REACTION SPEED GAME (UPGRADED)
 ========================= */
 
-function ReactionSpeedGame() {
-  const [state, setState] = useState("idle"); // idle | waiting | go | result
-  const [message, setMessage] = useState("Click Start, then click as fast as you can when it turns GREEN.");
-  const [startAt, setStartAt] = useState(null);
-  const [resultMs, setResultMs] = useState(null);
-  const [bestMs, setBestMs] = useState(() => {
-    const raw = localStorage.getItem("mannat_reaction_best");
-    return raw ? Number(raw) : null;
-  });
 
-  const [leaderboard, setLeaderboard] = useState(() => {
+/* ---------- Part 1 (updated visuals): ReactionSpeedGame ---------- */
+function ReactionSpeedGame() {
+  const ROUNDS = 5; // number of rounds per play
+  const [round, setRound] = React.useState(0);
+  const [state, setState] = React.useState("idle"); // idle | waiting | go | result
+  const [message, setMessage] = React.useState("Click Start to begin the multi-round reaction challenge.");
+  const [startAt, setStartAt] = React.useState(null);
+  const [times, setTimes] = React.useState([]); // recorded ms each round
+  const [resultMs, setResultMs] = React.useState(null);
+  const [bestMs, setBestMs] = React.useState(() => {
+    try {
+      const raw = localStorage.getItem("mannat_reaction_best");
+      return raw ? Number(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [leaderboard, setLeaderboard] = React.useState(() => {
     try {
       const raw = localStorage.getItem("mannat_reaction_leaderboard");
       return raw ? JSON.parse(raw) : [];
@@ -1416,530 +974,1000 @@ function ReactionSpeedGame() {
       return [];
     }
   });
+  const [name, setName] = React.useState(() => localStorage.getItem("mannat_player_name") || "");
 
-  const [badges, setBadges] = useState([]);
-
-  useEffect(() => {
-    if (state !== "waiting") return;
-    const delay = 900 + Math.floor(Math.random() * 2200);
-    const t = setTimeout(() => {
-      setState("go");
-      setMessage("GO! Click now!");
-      setStartAt(performance.now());
-    }, delay);
+  // prepare random delay when entering waiting state
+  React.useEffect(() => {
+    let t = null;
+    if (state === "waiting") {
+      const delay = 700 + Math.floor(Math.random() * 1600);
+      t = setTimeout(() => {
+        setState("go");
+        setMessage("GO! Click now!");
+        setStartAt(performance.now());
+      }, delay);
+    }
     return () => clearTimeout(t);
   }, [state]);
 
-  const computeBadges = (ms) => {
-    const b = [];
-    if (ms <= 230) b.push("Lightning Fingers ⚡");
-    if (ms <= 300) b.push("Focus Master 🎯");
-    if (ms <= 180) b.push("Ultra Instinct 🌀");
-    return b;
-  };
-
-  const addToLeaderboard = (ms) => {
-    const item = { id: `r_${Date.now()}`, ms, at: new Date().toISOString() };
-    const next = [item, ...leaderboard]
-      .sort((a, b) => a.ms - b.ms)
-      .slice(0, 8);
-    setLeaderboard(next);
-    localStorage.setItem("mannat_reaction_leaderboard", JSON.stringify(next));
-  };
-
   const start = () => {
-    setState("waiting");
+    if (!name.trim()) {
+      alert("Please enter your name so your score is saved.");
+      return;
+    }
+    localStorage.setItem("mannat_player_name", name);
+    setRound(0);
+    setTimes([]);
     setResultMs(null);
-    setBadges([]);
-    setMessage("Wait for GREEN...");
+    setMessage("Get ready for round 1...");
+    // small pause then enter waiting to start first round
+    setTimeout(() => setState("waiting"), 250);
   };
 
   const onClickPad = () => {
     if (state === "idle") return;
     if (state === "waiting") {
-      // clicked too early
+      // early click -> big penalty for the round
       setState("result");
-      setMessage("Too soon 😅 Click Start and try again.");
-      setResultMs(null);
-      setBadges([]);
+      setMessage("Too soon — round lost. Next round starting...");
+      setTimes((t) => [...t, 9999]); // penalty flag
+      setTimeout(() => nextRound(), 800);
       return;
     }
     if (state === "go") {
       const ms = Math.max(1, Math.round(performance.now() - startAt));
+      setTimes((t) => [...t, ms]);
+      setMessage(`Round ${round + 1} recorded: ${ms} ms`);
       setState("result");
-      setResultMs(ms);
-
-      const b = computeBadges(ms);
-      setBadges(b);
-
-      addToLeaderboard(ms);
-
-      if (!bestMs || ms < bestMs) {
-        setBestMs(ms);
-        localStorage.setItem("mannat_reaction_best", String(ms));
-      }
-
-      setMessage("Nice! Want to beat your best?");
+      setTimeout(() => nextRound(), 700);
+      return;
     }
+  };
+
+  const nextRound = () => {
+    const next = round + 1;
+    if (next >= ROUNDS) {
+      // finish
+      const finalTimes = times.slice();
+      const valid = finalTimes.filter((x) => x < 9999);
+      const avg = valid.length ? Math.round(valid.reduce((a, b) => a + b, 0) / valid.length) : 9999;
+      setResultMs(avg);
+      setMessage(`Finished ${ROUNDS} rounds — average ${avg} ms.`);
+      setState("idle");
+      // update best if improved
+      if (!bestMs || avg < bestMs) {
+        try {
+          localStorage.setItem("mannat_reaction_best", String(avg));
+        } catch {}
+        setBestMs(avg);
+      }
+      return;
+    }
+    // prepare next round
+    setRound(next);
+    setMessage(`Get ready for round ${next + 1}...`);
+    setState("waiting");
   };
 
   const shareScore = async () => {
-    const text = resultMs
-      ? `I got ${resultMs}ms on Mannat's Reaction Speed game! ⚡`
-      : `Try Mannat's Reaction Speed game! ⚡`;
+    if (!resultMs) return;
+    const text = `${name} scored ${resultMs} ms average on the Reaction Challenge (${ROUNDS} rounds).`;
     try {
-      if (navigator.share) {
-        await navigator.share({ text });
-      } else {
+      if (navigator.share) await navigator.share({ text });
+      else {
         await navigator.clipboard.writeText(text);
-        alert("Copied to clipboard ✅");
+        alert("Score copied to clipboard ✅");
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      console.log(e);
     }
   };
 
-  const padStyle =
-    state === "go"
-      ? styles.reactPadGo
-      : state === "waiting"
-      ? styles.reactPadWait
-      : styles.reactPadIdle;
+  const saveToLeaderboard = () => {
+    if (!resultMs) {
+      alert("No score to save yet.");
+      return;
+    }
+    const item = { id: `r_${Date.now()}`, name: name || "Player", ms: resultMs, at: new Date().toISOString() };
+    const next = [item, ...leaderboard].sort((a, b) => a.ms - b.ms).slice(0, 8);
+    setLeaderboard(next);
+    try {
+      localStorage.setItem("mannat_reaction_leaderboard", JSON.stringify(next));
+    } catch {}
+    alert("Saved to leaderboard ✅");
+  };
+
+  // styles: adjusted for rectangular READY pad and larger Start button
+  const padBase = {
+    padding: "18px 28px",        // more rectangular feel
+    minWidth: 220,               // wider rectangular
+    minHeight: 96,               // not too tall — rectangular panel
+    borderRadius: 14,
+    fontSize: 26,
+    fontWeight: 900,
+    cursor: "pointer",
+    userSelect: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  };
+  const padGo = { background: "#28c76f", color: "#04221b", boxShadow: "0 18px 40px rgba(40,199,111,0.12)" };
+  const padWait = { background: "#f6c642", color: "#3b2f00", boxShadow: "0 14px 36px rgba(246,198,66,0.08)" };
+  const padIdle = { background: "#eef1f6", color: "#0b1220", boxShadow: "0 12px 30px rgba(16,24,40,0.04)" };
+
+  const padStyle = state === "go" ? { ...padBase, ...padGo } : state === "waiting" ? { ...padBase, ...padWait } : { ...padBase, ...padIdle };
+
+  // Start button style: bigger + light green to be eye-catching
+  const startBtnStyle = {
+    padding: "12px 18px",
+    borderRadius: 12,
+    background: "linear-gradient(90deg,#6ee7b7,#32d583)",
+    color: "#04221b",
+    fontWeight: 900,
+    fontSize: 16,
+    border: "none",
+    boxShadow: "0 10px 28px rgba(50,213,131,0.18)",
+    cursor: "pointer",
+  };
 
   return (
-    <div style={styles.arcadeCard}>
-      <div style={styles.arcadeHeader}>
+    <div style={{ borderRadius: 12, padding: 18, background: "white", border: "1px solid rgba(20,20,40,0.04)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 12 }}>
         <div>
-          <div style={styles.arcadeTitle}>Reaction Speed</div>
-          <div style={styles.arcadeSub}>{message}</div>
+          <div style={{ fontWeight: 900, fontSize: 18, display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ background: "#ffeaa7", padding: "6px 10px", borderRadius: 8, fontSize: 18 }}>⚡</span>
+            <span>Reaction Challenge — {ROUNDS} rounds</span>
+          </div>
+          <div style={{ color: "#5a5f72", marginTop: 6, maxWidth: 520 }}>
+            Play {ROUNDS} rounds. Final score = average reaction time (ms). Early clicks penalize the round.
+          </div>
         </div>
 
-        <div style={styles.arcadeRight}>
-          <div style={styles.arcadeStatPill}>
-            <span style={{ opacity: 0.7 }}>Personal Best</span>
-            <span style={{ fontWeight: 950 }}>
-              {bestMs ? `${bestMs} ms` : "—"}
-            </span>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ textAlign: "right", marginRight: 6 }}>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Personal Best</div>
+            <div style={{ fontWeight: 900, fontSize: 18 }}>{bestMs ? `${bestMs} ms` : "—"}</div>
           </div>
 
-          <button style={styles.primaryBtn} onClick={start}>
+          <input
+            placeholder="Player name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={{ padding: "8px 12px", borderRadius: 8, fontWeight: 800, border: "1px solid #e6e6e9" }}
+          />
+          <button onClick={start} style={startBtnStyle}>
             Start
           </button>
         </div>
       </div>
 
-      <button style={{ ...styles.reactPad, ...padStyle }} onClick={onClickPad}>
-        {state === "go" ? "CLICK!" : state === "waiting" ? "WAIT..." : "READY"}
-      </button>
-
-      <div style={styles.arcadeBottomRow}>
-        <div style={styles.arcadeResultCard}>
-          <div style={styles.arcadeMiniLabel}>Your Time</div>
-          <div style={styles.arcadeBigNumber}>{resultMs ? `${resultMs} ms` : "—"}</div>
-          {badges.length > 0 && (
-            <div style={styles.badgeRow}>
-              {badges.map((b) => (
-                <span key={b} style={styles.badgePill}>
-                  {b}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <button style={styles.secondaryBtn} onClick={shareScore} disabled={!resultMs}>
-            Share Score
-          </button>
+      <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          <div onClick={onClickPad} style={padStyle}>
+            {state === "go" ? "Click!" : state === "waiting" ? "Wait..." : "Ready"}
+          </div>
         </div>
 
-        <div style={styles.arcadeLeaderboardCard}>
-          <div style={styles.arcadeMiniLabel}>Leaderboard (local)</div>
+        <div style={{ width: 320 }}>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>Round</div>
+          <div style={{ fontWeight: 900, fontSize: 22 }}>{Math.min(round + 1, ROUNDS)} / {ROUNDS}</div>
 
-          {leaderboard.length === 0 ? (
-            <div style={styles.arcadeEmpty}>No scores yet — hit Start and play.</div>
-          ) : (
-            <div style={styles.lbList}>
-              {leaderboard.map((it, idx) => (
-                <div key={it.id} style={styles.lbRow}>
-                  <div style={styles.lbRank}>#{idx + 1}</div>
-                  <div style={styles.lbScore}>{it.ms} ms</div>
-                  <div style={styles.lbDate}>
-                    {new Date(it.at).toLocaleDateString()}
-                  </div>
+          <div style={{ marginTop: 8, color: "#333", fontWeight: 700 }}>{message}</div>
+
+          <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+            <button onClick={shareScore} disabled={!resultMs} style={{ padding: "8px 10px", borderRadius: 8 }}>
+              Share Score
+            </button>
+            <button onClick={saveToLeaderboard} disabled={!resultMs} style={{ padding: "8px 10px", borderRadius: 8, background: "#6d38ff", color: "white" }}>
+              Save to Leaderboard
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ flex: 1, borderRadius: 8, padding: 10, background: "#fbfbfd", border: "1px solid rgba(0,0,0,0.02)" }}>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>Recent times</div>
+          <div style={{ marginTop: 8 }}>
+            {times.length === 0 ? (
+              <div style={{ color: "#9aa0ad" }}>No rounds yet.</div>
+            ) : (
+              times.map((t, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
+                  <div>Round {i + 1}</div>
+                  <div style={{ fontWeight: 900 }}>{t >= 9999 ? "F (fast click)" : `${t} ms`}</div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
+        </div>
+
+        <div style={{ width: 260, borderRadius: 8, padding: 10, background: "#fbfbfd", border: "1px solid rgba(0,0,0,0.02)" }}>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>Leaderboard (local)</div>
+          <div style={{ marginTop: 8 }}>
+            {leaderboard.length === 0 ? (
+              <div style={{ color: "#9aa0ad" }}>No scores yet — be the first!</div>
+            ) : (
+              leaderboard.map((it, idx) => (
+                <div key={it.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
+                  <div style={{ fontWeight: 900 }}>#{idx + 1} {it.name}</div>
+                  <div>{it.ms} ms</div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+
+
+
 /* =========================
-   TYPING PRO GAME
+   TYPING PRO GAME (UPGRADED)
+========================= */
+
+
+
+/* =========================
+   TYPING PRO GAME (UPGRADED) — FIXED SCORING + SOUND + CONFETTI
 ========================= */
 
 function TypingProGame() {
-  const SENTENCES = [
-    "The quick brown fox jumps over the lazy dog.",
-    "Debugging is like being the detective in a crime movie.",
-    "Quality is never an accident; it is always the result of effort.",
-    "Ship small, learn fast, and iterate with confidence.",
-    "Write tests like your future self will thank you.",
-    "Smooth UI and reliable logic make users trust the product.",
-  ];
+  const SENTENCES = React.useMemo(
+    () => [
+      "Write tests like your future self will thank you.",
+      "Fast feedback saves hours of debugging later.",
+      "Make small, incremental changes and test often.",
+      "Readable code is maintainable code.",
+      "Good tests document intent, not implementation.",
+      "Quality is never an accident; it is always the result of effort.",
+      "Ship small, learn fast, and iterate with confidence.",
+      "A bug fixed early is a feature delivered on time.",
+    ],
+    []
+  );
 
-  const DEV_SNIPPETS = [
-    {
-      label: "JavaScript",
-      text: `function sum(a, b) {\n  return a + b;\n}\n\nconsole.log(sum(2, 5));`,
-    },
-    {
-      label: "Python",
-      text: `def is_even(n):\n    return n % 2 == 0\n\nprint(is_even(42))`,
-    },
-    {
-      label: "React",
-      text: `export default function App() {\n  return <h1>Hello</h1>;\n}`,
-    },
-  ];
+  const TIMER_OPTIONS = [15, 30, 60];
 
-  const [mode, setMode] = useState("sentences"); // sentences | dev
-  const [devPick, setDevPick] = useState(0);
+  const [name, setName] = React.useState(() => localStorage.getItem("mannat_player_name") || "");
+  const [duration, setDuration] = React.useState(30);
 
-  const [duration, setDuration] = useState(30); // seconds
-  const [status, setStatus] = useState("idle"); // idle | running | done
-  const [timeLeft, setTimeLeft] = useState(duration);
+  const [running, setRunning] = React.useState(false);
+  const [timeLeft, setTimeLeft] = React.useState(30);
 
-  const [target, setTarget] = useState(() => randomSentence(SENTENCES));
-  const [typed, setTyped] = useState("");
+  const [target, setTarget] = React.useState(() => {
+    const i = Math.floor(Math.random() * SENTENCES.length);
+    return SENTENCES[i];
+  });
 
-  const [wpm, setWpm] = useState(0);
-  const [accuracy, setAccuracy] = useState(100);
+  const [typed, setTyped] = React.useState("");
+  const [results, setResults] = React.useState(null); // { wpm, accuracy, correctChars, charsTyped, position }
+  const [showBanner, setShowBanner] = React.useState(false);
 
-  const [pb, setPb] = useState(() => {
+  const [leaderboard, setLeaderboard] = React.useState(() => {
     try {
-      const raw = localStorage.getItem("mannat_typing_pb");
-      return raw ? JSON.parse(raw) : null;
+      const raw = localStorage.getItem("mannat_typing_leaderboard_v2");
+      return raw ? JSON.parse(raw) : {};
     } catch {
-      return null;
+      return {};
     }
   });
 
-  const [leaderboard, setLeaderboard] = useState(() => {
+  // fun toggles
+  const [soundOn, setSoundOn] = React.useState(() => {
     try {
-      const raw = localStorage.getItem("mannat_typing_leaderboard");
-      return raw ? JSON.parse(raw) : [];
+      return localStorage.getItem("mannat_tp_sound") === "1";
     } catch {
-      return [];
+      return false;
     }
   });
 
-  const [badges, setBadges] = useState([]);
-
-  useEffect(() => {
-    setTimeLeft(duration);
-  }, [duration]);
-
-  useEffect(() => {
-    if (status !== "running") return;
-    const t = setInterval(() => {
-      setTimeLeft((s) => {
-        if (s <= 1) {
-          clearInterval(t);
-          finish();
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
-
-  useEffect(() => {
-    // live metrics
-    if (status !== "running") return;
-
-    const elapsed = duration - timeLeft;
-    const minutes = Math.max(1 / 60, elapsed / 60);
-
-    const correct = countCorrectChars(target, typed);
-    const incorrect = Math.max(0, typed.length - correct);
-
-    const acc = typed.length === 0 ? 100 : Math.round((correct / typed.length) * 100);
-    setAccuracy(acc);
-
-    const words = correct / 5; // standard approximation
-    const curWpm = Math.round(words / minutes);
-    setWpm(curWpm);
-  }, [typed, timeLeft, status, duration, target]);
-
-  const start = () => {
-    const t = mode === "dev" ? DEV_SNIPPETS[devPick].text : randomSentence(SENTENCES);
-    setTarget(t);
-    setTyped("");
-    setWpm(0);
-    setAccuracy(100);
-    setBadges([]);
-    setStatus("running");
-    setTimeLeft(duration);
-  };
-
-  const finish = () => {
-    setStatus("done");
-
-    // compute final
-    const elapsed = duration;
-    const minutes = elapsed / 60;
-    const correct = countCorrectChars(target, typed);
-    const words = correct / 5;
-    const finalWpm = Math.round(words / minutes);
-
-    const acc = typed.length === 0 ? 0 : Math.round((correct / typed.length) * 100);
-
-    const b = [];
-    if (finalWpm >= 60) b.push("Lightning Fingers ⚡");
-    if (acc >= 95) b.push("Focus Master 🎯");
-    if (finalWpm >= 80 && acc >= 95) b.push("Pro Mode 🔥");
-    setBadges(b);
-
-    const score = {
-      id: `t_${Date.now()}`,
-      wpm: finalWpm,
-      acc,
-      mode,
-      at: new Date().toISOString(),
-    };
-
-    // PB
-    if (!pb || finalWpm > pb.wpm || (finalWpm === pb.wpm && acc > pb.acc)) {
-      setPb({ wpm: finalWpm, acc, mode });
-      localStorage.setItem("mannat_typing_pb", JSON.stringify({ wpm: finalWpm, acc, mode }));
-    }
-
-    // leaderboard (top 8)
-    const next = [score, ...leaderboard]
-      .sort((a, b) => (b.wpm - a.wpm) || (b.acc - a.acc))
-      .slice(0, 8);
-    setLeaderboard(next);
-    localStorage.setItem("mannat_typing_leaderboard", JSON.stringify(next));
-  };
-
-  const onChange = (e) => {
-    if (status !== "running") return;
-    const val = e.target.value;
-    // keep typed length bounded so it doesn't explode on paste
-    if (val.length > target.length + 50) return;
-    setTyped(val);
-  };
-
-  const shareScore = async () => {
-    const bestText = pb
-      ? `Typing PRO: ${pb.wpm} WPM @ ${pb.acc}% accuracy (${pb.mode}) 🔥`
-      : `Try Mannat's Typing PRO game 🔥`;
+  const [confettiOn, setConfettiOn] = React.useState(() => {
     try {
-      if (navigator.share) {
-        await navigator.share({ text: bestText });
-      } else {
-        await navigator.clipboard.writeText(bestText);
-        alert("Copied to clipboard ✅");
+      const v = localStorage.getItem("mannat_tp_confetti");
+      return v === null ? true : v === "1";
+    } catch {
+      return true;
+    }
+  });
+
+  // refs
+  const startRef = React.useRef(0);
+  const rafRef = React.useRef(null);
+  const inputRef = React.useRef(null);
+
+  // audio (tiny click)
+  const audioRef = React.useRef(null);
+  function playClick() {
+    if (!soundOn) return;
+    try {
+      if (!audioRef.current) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioRef.current = new AudioCtx();
       }
+      const ctx = audioRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "square";
+      o.frequency.value = 520;
+      g.gain.value = 0.04;
+
+      o.connect(g);
+      g.connect(ctx.destination);
+
+      const now = ctx.currentTime;
+      g.gain.setValueAtTime(0.04, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+
+      o.start(now);
+      o.stop(now + 0.035);
     } catch {
       // ignore
     }
+  }
+
+  // keep timeLeft in sync when duration changes (only when not running)
+  React.useEffect(() => {
+    if (!running) setTimeLeft(duration);
+  }, [duration, running]);
+
+  function pickSentence() {
+    return SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
+  }
+
+  // ---------- SCORING (FIXED) ----------
+  // Make scoring tolerant:
+  // - case-insensitive
+  // - remove punctuation
+  // - collapse whitespace
+  const clean = (s) =>
+    (s || "")
+      .replace(/\r\n/g, "\n")
+      .toLowerCase()
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'[\]\\|<>@+]/g, "") // strip punctuation
+      .replace(/\s+/g, " ") // collapse spaces
+      .trim();
+
+  function computeStats(finalTyped, elapsedSeconds) {
+    const t = clean(finalTyped);
+    const tar = clean(target);
+    const elapsed = Math.max(0.001, elapsedSeconds || duration);
+
+    let correctChars = 0;
+    const n = Math.min(t.length, tar.length);
+    for (let i = 0; i < n; i++) {
+      if (t[i] === tar[i]) correctChars++;
+    }
+
+    const charsTyped = t.length;
+    const accuracy = charsTyped === 0 ? 0 : Math.round((correctChars / charsTyped) * 100);
+
+    const minutes = elapsed / 60;
+    const wpm = charsTyped === 0 ? 0 : Math.max(0, Math.round((correctChars / 5) / minutes));
+
+    return { wpm, accuracy, correctChars, charsTyped, cleanedTyped: t, cleanedTarget: tar };
+  }
+
+  function startRound() {
+    if (!name.trim()) {
+      alert("Please enter your name before starting so your score can be saved.");
+      return;
+    }
+    localStorage.setItem("mannat_player_name", name);
+
+    const nextTarget = pickSentence();
+    setTarget(nextTarget);
+    setTyped("");
+    setResults(null);
+    setShowBanner(false);
+
+    setRunning(true);
+    startRef.current = performance.now();
+    setTimeLeft(duration);
+
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function stopRound({ finished = false } = {}) {
+    const elapsed = Math.min(
+      duration,
+      Math.max(0, (performance.now() - (startRef.current || performance.now())) / 1000)
+    );
+
+    setRunning(false);
+
+    const stats = computeStats(typed, finished ? duration : elapsed);
+
+    const key = `t${duration}`;
+    const board = (leaderboard && leaderboard[key]) || [];
+
+    // estimate position if saved (descending WPM, then accuracy)
+    const player = (name || "Player").trim() || "Player";
+    const hypothetical = [
+      ...board,
+      { id: "hypo", name: player, wpm: stats.wpm, accuracy: stats.accuracy },
+    ].sort((a, b) => b.wpm - a.wpm || b.accuracy - a.accuracy);
+
+    const position =
+      hypothetical.findIndex((x) => x.name === player && x.wpm === stats.wpm && x.accuracy === stats.accuracy) + 1;
+
+    setResults({ wpm: stats.wpm, accuracy: stats.accuracy, correctChars: stats.correctChars, charsTyped: stats.charsTyped, position });
+    setShowBanner(true);
+  }
+
+  // requestAnimationFrame timer loop
+  React.useEffect(() => {
+    if (!running) {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      return;
+    }
+
+    const tick = () => {
+      const elapsed = (performance.now() - startRef.current) / 1000;
+      const left = Math.max(0, duration - elapsed);
+      setTimeLeft(left);
+
+      if (left <= 0) {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+        setTimeLeft(0);
+        stopRound({ finished: true });
+        return;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running, duration]);
+
+  // confetti
+  const [confettiBurst, setConfettiBurst] = React.useState(0);
+  function popConfetti() {
+    if (!confettiOn) return;
+    setConfettiBurst((x) => x + 1);
+    setTimeout(() => setConfettiBurst((x) => x), 0);
+  }
+
+  function saveToLeaderboard() {
+    if (!results) return;
+
+    const key = `t${duration}`;
+    const board = (leaderboard && leaderboard[key]) || [];
+    const player = (name || "Player").trim() || "Player";
+
+    const item = {
+      id: `tp_${Date.now()}`,
+      name: player,
+      wpm: results.wpm,
+      accuracy: results.accuracy,
+      when: new Date().toISOString(),
+    };
+
+    const merged = [...board, item]
+      .sort((a, b) => b.wpm - a.wpm || b.accuracy - a.accuracy)
+      .slice(0, 10);
+
+    const next = { ...(leaderboard || {}), [key]: merged };
+    setLeaderboard(next);
+    try {
+      localStorage.setItem("mannat_typing_leaderboard_v2", JSON.stringify(next));
+    } catch {}
+
+    // if top 3 -> confetti
+    const rank = merged.findIndex((x) => x.id === item.id) + 1;
+    if (rank > 0 && rank <= 3) popConfetti();
+
+    alert(rank > 0 && rank <= 3 ? `Saved ✅ NEW TOP ${rank}! 🎉` : "Saved to leaderboard ✅");
+  }
+
+  async function shareResultText() {
+    if (!results) return;
+    const player = (name || "Player").trim() || "Player";
+    const text = `${player} scored ${results.wpm} WPM at ${results.accuracy}% accuracy on Typing PRO (${duration}s).`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert("Result copied to clipboard ✅");
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(text);
+        alert("Copied to clipboard ✅");
+      } catch {
+        alert(text);
+      }
+    }
+  }
+
+  const progressPct = Math.max(0, Math.min(100, (timeLeft / duration) * 100));
+  const boardKey = `t${duration}`;
+  const board = (leaderboard && leaderboard[boardKey]) || [];
+
+  // Live stats: only meaningful while running
+  const liveStats = React.useMemo(() => {
+    if (!running) return { wpm: 0, accuracy: 0 };
+    const elapsed = Math.max(0.001, duration - timeLeft);
+    const s = computeStats(typed, elapsed);
+    return { wpm: s.wpm, accuracy: s.accuracy };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typed, timeLeft, running, duration, target]);
+
+  const ui = {
+    container: {
+      borderRadius: 12,
+      padding: 18,
+      background: "white",
+      border: "1px solid rgba(20,20,40,0.04)",
+      position: "relative",
+      overflow: "hidden",
+    },
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 12,
+      flexWrap: "wrap",
+    },
+    timerBox: {
+      width: 220,
+      textAlign: "center",
+      padding: 16,
+      borderRadius: 12,
+      background: "linear-gradient(180deg,#0b0f1a,#0f1624)",
+      color: "white",
+    },
+    progress: {
+      height: 12,
+      borderRadius: 12,
+      background: "rgba(255,255,255,0.08)",
+      overflow: "hidden",
+      marginTop: 12,
+    },
+    progressInner: {
+      height: 12,
+      width: `${progressPct}%`,
+      borderRadius: 12,
+      transition: "width 80ms linear",
+      background: "linear-gradient(90deg,#7c3aed,#f472b6)",
+    },
+    target: {
+      borderRadius: 12,
+      padding: 16,
+      background: "#0b0f14",
+      color: "#e6faf0",
+      minHeight: 120,
+      fontFamily: "monospace",
+      fontSize: 16,
+      position: "relative",
+      overflow: "hidden",
+    },
+    banner: {
+      marginTop: 18,
+      borderRadius: 12,
+      padding: 18,
+      background: "linear-gradient(180deg,#fdeff9,#f3e8ff)",
+      border: "1px solid rgba(125,42,255,0.08)",
+    },
+    card: {
+      borderRadius: 12,
+      padding: 12,
+      background: "#fbfbfd",
+      border: "1px solid rgba(0,0,0,0.02)",
+    },
+
+    // input highlight
+    inputWrap: {
+      marginTop: 12,
+      borderRadius: 16,
+      padding: 14,
+      border: running ? "1px solid rgba(109,56,255,0.35)" : "1px solid rgba(20,20,40,0.10)",
+      background: running
+        ? "linear-gradient(180deg, rgba(109,56,255,0.08), rgba(255,120,190,0.05))"
+        : "linear-gradient(180deg, rgba(20,20,40,0.02), rgba(20,20,40,0.01))",
+      boxShadow: running
+        ? "0 18px 40px rgba(109,56,255,0.12), 0 0 0 6px rgba(255,120,190,0.06)"
+        : "0 14px 34px rgba(0,0,0,0.04)",
+    },
+    inputTitleRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap",
+      marginBottom: 10,
+    },
+    inputTitle: { fontWeight: 950, color: "#1a1b23", display: "flex", alignItems: "center", gap: 8 },
+    pillRow: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
+    inputPill: {
+      padding: "8px 10px",
+      borderRadius: 999,
+      background: "rgba(109,56,255,0.12)",
+      border: "1px solid rgba(109,56,255,0.18)",
+      fontWeight: 900,
+      color: "#3b1ec8",
+      fontSize: 12,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      cursor: "pointer",
+      userSelect: "none",
+    },
+    textarea: {
+      width: "100%",
+      height: 160,
+      borderRadius: 14,
+      padding: 14,
+      fontFamily: "monospace",
+      fontSize: 16,
+      border: running ? "1px solid rgba(109,56,255,0.28)" : "1px solid rgba(10,10,20,0.06)",
+      outline: "none",
+      background: "rgba(255,255,255,0.92)",
+      boxShadow: running ? "0 0 0 4px rgba(109,56,255,0.08)" : "none",
+      resize: "vertical",
+      opacity: running ? 1 : 0.85,
+    },
+    confettiLayer: {
+      position: "absolute",
+      inset: 0,
+      pointerEvents: "none",
+      overflow: "hidden",
+      zIndex: 5,
+    },
   };
 
-  const progress = Math.round(((duration - timeLeft) / duration) * 100);
-
   return (
-    <div style={styles.arcadeCard}>
-      <div style={styles.arcadeHeader}>
+    <div style={ui.container}>
+      <style>
+        {`
+          @keyframes targetPulse { 0% { opacity: 0.06 } 50% { opacity: 0.14 } 100% { opacity: 0.06 } }
+          .tp-correct { background: rgba(34,197,94,0.18); padding: 2px 6px; border-radius: 4px; color: #e9fff0; }
+          .tp-incorrect { background: rgba(248,113,113,0.14); padding: 2px 6px; border-radius: 4px; color: #fff1f1; }
+
+          @keyframes confettiFall {
+            0% { transform: translate3d(var(--x), -20px, 0) rotate(0deg); opacity: 1; }
+            100% { transform: translate3d(calc(var(--x) + var(--drift)), 620px, 0) rotate(520deg); opacity: 0; }
+          }
+          .confetti {
+            position: absolute;
+            top: -20px;
+            width: 10px;
+            height: 14px;
+            border-radius: 3px;
+            background: linear-gradient(180deg, rgba(109,56,255,0.95), rgba(255,120,190,0.9));
+            animation: confettiFall 1.2s ease-in forwards;
+            filter: drop-shadow(0 10px 18px rgba(109,56,255,0.15));
+          }
+        `}
+      </style>
+
+      {/* Confetti burst */}
+      {confettiOn && confettiBurst > 0 && (
+        <div style={ui.confettiLayer}>
+          {Array.from({ length: 22 }).map((_, i) => {
+            const left = (i * 17) % 100;
+            const drift = ((i % 2 === 0 ? 1 : -1) * (20 + (i % 6) * 8));
+            const delay = (i % 8) * 0.02;
+            const size = 8 + (i % 5) * 2;
+            return (
+              <div
+                key={`${confettiBurst}_${i}`}
+                className="confetti"
+                style={{
+                  left: `${left}%`,
+                  width: size,
+                  height: size + 4,
+                  animationDelay: `${delay}s`,
+                  ["--x"]: `${left}vw`,
+                  ["--drift"]: `${drift}px`,
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      <div style={ui.header}>
         <div>
-          <div style={styles.arcadeTitle}>Typing PRO</div>
-          <div style={styles.arcadeSub}>
-            Random sentences, live WPM + accuracy, 30s mode, live highlights, PB + leaderboard saved locally.
+          <div style={{ fontSize: 18, fontWeight: 900 }}>Typing PRO</div>
+          <div style={{ color: "#6b7280", marginTop: 6 }}>
+            Pick a timer, hit Start, then type. Scoring ignores punctuation + is case-insensitive.
           </div>
         </div>
 
-        <div style={styles.arcadeRight}>
-          <div style={styles.arcadeStatPill}>
-            <span style={{ opacity: 0.7 }}>Personal Best</span>
-            <span style={{ fontWeight: 950 }}>
-              {pb ? `${pb.wpm} WPM • ${pb.acc}%` : "—"}
-            </span>
-          </div>
-
-          <button style={styles.primaryBtn} onClick={start}>
-            {status === "running" ? "Restart" : "Start"}
-          </button>
-        </div>
-      </div>
-
-      <div style={styles.typingTopRow}>
-        <div style={styles.typingControls}>
-          <div style={styles.typingControl}>
-            <div style={styles.arcadeMiniLabel}>Mode</div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button
-                style={{ ...styles.pgSoftBtn, ...(mode === "sentences" ? styles.pgSoftBtnActive : null) }}
-                onClick={() => setMode("sentences")}
-                disabled={status === "running"}
-              >
-                Sentences
-              </button>
-              <button
-                style={{ ...styles.pgSoftBtn, ...(mode === "dev" ? styles.pgSoftBtnActive : null) }}
-                onClick={() => setMode("dev")}
-                disabled={status === "running"}
-              >
-                Developer Mode
-              </button>
-            </div>
-
-            {mode === "dev" && (
-              <div style={{ marginTop: 10 }}>
-                <div style={styles.arcadeMiniLabel}>Snippet</div>
-                <select
-                  value={devPick}
-                  onChange={(e) => setDevPick(Number(e.target.value))}
-                  style={styles.pgSelect}
-                  disabled={status === "running"}
-                >
-                  {DEV_SNIPPETS.map((s, idx) => (
-                    <option key={s.label} value={idx}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div style={styles.typingControl}>
-            <div style={styles.arcadeMiniLabel}>Timer</div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {[15, 30, 60].map((s) => (
-                <button
-                  key={s}
-                  style={{ ...styles.pgSoftBtn, ...(duration === s ? styles.pgSoftBtnActive : null) }}
-                  onClick={() => setDuration(s)}
-                  disabled={status === "running"}
-                >
-                  {s}s
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={styles.typingStats}>
-            <div style={styles.statBox}>
-              <div style={styles.arcadeMiniLabel}>WPM</div>
-              <div style={styles.arcadeBigNumberSmall}>{wpm}</div>
-            </div>
-            <div style={styles.statBox}>
-              <div style={styles.arcadeMiniLabel}>Accuracy</div>
-              <div style={styles.arcadeBigNumberSmall}>{accuracy}%</div>
-            </div>
-            <div style={styles.statBox}>
-              <div style={styles.arcadeMiniLabel}>Time</div>
-              <div style={styles.arcadeBigNumberSmall}>{timeLeft}s</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={styles.progressCard}>
-          <div style={styles.arcadeMiniLabel}>Neon Progress</div>
-          <div style={styles.progressOuter}>
-            <div style={{ ...styles.progressInner, width: `${progress}%` }} />
-          </div>
-
-          {badges.length > 0 && (
-            <div style={styles.badgeRow}>
-              {badges.map((b) => (
-                <span key={b} style={styles.badgePill}>
-                  {b}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <button style={styles.secondaryBtn} onClick={shareScore}>
-            Share Score
-          </button>
-        </div>
-      </div>
-
-      <div style={styles.typingMain}>
-        <div style={styles.typingTargetCard}>
-          <div style={styles.arcadeMiniLabel}>Target</div>
-          <div style={styles.typingTargetText}>
-            {renderHighlighted(target, typed)}
-          </div>
-        </div>
-
-        <div style={styles.typingInputCard}>
-          <div style={styles.arcadeMiniLabel}>Type here</div>
-          <textarea
-            value={typed}
-            onChange={onChange}
-            placeholder={status === "running" ? "" : "Hit Start to begin..."}
-            style={styles.typingTextarea}
-            disabled={status !== "running"}
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Player name"
+            style={{
+              padding: "8px 10px",
+              borderRadius: 8,
+              border: "1px solid #e6e6e9",
+              fontWeight: 800,
+            }}
           />
-          <div style={styles.typingHint}>
-            Live highlight shows correct/incorrect characters as you type.
-          </div>
-        </div>
-      </div>
 
-      <div style={styles.arcadeBottomRow}>
-        <div style={styles.arcadeLeaderboardCard}>
-          <div style={styles.arcadeMiniLabel}>Leaderboard (local)</div>
-          {leaderboard.length === 0 ? (
-            <div style={styles.arcadeEmpty}>No scores yet — hit Start and play.</div>
-          ) : (
-            <div style={styles.lbList}>
-              {leaderboard.map((it, idx) => (
-                <div key={it.id} style={styles.lbRow}>
-                  <div style={styles.lbRank}>#{idx + 1}</div>
-                  <div style={styles.lbScore}>
-                    {it.wpm} WPM • {it.acc}%
-                  </div>
-                  <div style={styles.lbDate}>
-                    {it.mode === "dev" ? "Dev" : "Sentence"} •{" "}
-                    {new Date(it.at).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={styles.arcadeResultCard}>
-          <div style={styles.arcadeMiniLabel}>How scoring works</div>
-          <div style={styles.arcadeSmallText}>
-            WPM uses correct characters ÷ 5 ÷ minutes. Accuracy is correct ÷ typed.
-            PB and leaderboard are saved in your browser (localStorage).
+          <div style={{ display: "flex", gap: 8 }}>
+            {TIMER_OPTIONS.map((t) => (
+              <button
+                key={t}
+                onClick={() => !running && setDuration(t)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 10,
+                  background: duration === t ? "linear-gradient(90deg,#6d38ff,#d946ef)" : "#fbfbfd",
+                  color: duration === t ? "white" : "#111827",
+                  border: "none",
+                  cursor: running ? "not-allowed" : "pointer",
+                  fontWeight: 800,
+                }}
+              >
+                {t}s
+              </button>
+            ))}
           </div>
 
           <button
-            style={styles.pgSoftBtn}
-            onClick={() => {
-              localStorage.removeItem("mannat_typing_pb");
-              localStorage.removeItem("mannat_typing_leaderboard");
-              setPb(null);
-              setLeaderboard([]);
-              alert("Typing PRO stats cleared ✅");
+            onClick={() => (running ? stopRound({ finished: false }) : startRound())}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 12,
+              background: running ? "#ef4444" : "linear-gradient(90deg,#6ee7b7,#32d583)",
+              color: running ? "white" : "#04221b",
+              fontWeight: 900,
+              fontSize: 14,
+              border: "none",
+              cursor: "pointer",
             }}
           >
-            Reset Typing Stats
+            {running ? "Stop" : "Start"}
           </button>
         </div>
       </div>
+
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 640px" }}>
+          <div style={{ marginBottom: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div style={ui.timerBox}>
+              <div style={{ fontSize: 28, fontWeight: 900 }}>{Math.ceil(timeLeft)}s</div>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>Time left</div>
+              <div style={ui.progress}>
+                <div style={ui.progressInner} />
+              </div>
+            </div>
+
+            <div style={{ flex: "1 1 360px" }}>
+              <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>Target</div>
+              <div style={ui.target}>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    pointerEvents: "none",
+                    background: "linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.03))",
+                    mixBlendMode: "overlay",
+                    animation: "targetPulse 2.6s infinite",
+                  }}
+                />
+                {/* Visual highlight still strict (fine), scoring is tolerant */}
+                <div style={{ position: "relative", zIndex: 2, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
+                  {(target || "").split("").map((ch, i) => {
+                    const typedChar = (typed || "")[i];
+                    const correct =
+                      typedChar !== undefined && typedChar !== null && typedChar !== ""
+                        ? String(typedChar).toLowerCase() === String(ch).toLowerCase()
+                        : null;
+
+                    return (
+                      <span
+                        key={i}
+                        className={correct === true ? "tp-correct" : correct === false ? "tp-incorrect" : ""}
+                      >
+                        {ch}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* input area */}
+          <div style={ui.inputWrap}>
+            <div style={ui.inputTitleRow}>
+              <div style={ui.inputTitle}>
+                <span style={{ fontSize: 18 }}>⌨️</span>
+                <span>Type here</span>
+              </div>
+
+              <div style={ui.pillRow}>
+                <div
+                  style={ui.inputPill}
+                  onClick={() => {
+                    const next = !soundOn;
+                    setSoundOn(next);
+                    try {
+                      localStorage.setItem("mannat_tp_sound", next ? "1" : "0");
+                    } catch {}
+                  }}
+                  title="Toggle typing sound"
+                >
+                  <span>{soundOn ? "🔊" : "🔇"}</span>
+                  <span>{soundOn ? "Sound ON" : "Sound OFF"}</span>
+                </div>
+
+                <div
+                  style={ui.inputPill}
+                  onClick={() => {
+                    const next = !confettiOn;
+                    setConfettiOn(next);
+                    try {
+                      localStorage.setItem("mannat_tp_confetti", next ? "1" : "0");
+                    } catch {}
+                  }}
+                  title="Toggle confetti"
+                >
+                  <span>🎉</span>
+                  <span>{confettiOn ? "Confetti ON" : "Confetti OFF"}</span>
+                </div>
+
+                <div style={{ ...ui.inputPill, cursor: "default" }}>
+                  <span>✨</span>
+                  <span>{running ? "Go go go!" : "Press Start first"}</span>
+                </div>
+              </div>
+            </div>
+
+            <textarea
+              ref={inputRef}
+              placeholder={running ? "Type the sentence above…" : "Press Start → then your cursor jumps here."}
+              value={typed}
+              onChange={(e) => {
+                setTyped(e.target.value);
+                // play click only while running
+                if (running) playClick();
+              }}
+              disabled={!running}
+              style={ui.textarea}
+            />
+
+            <div style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>
+              Scoring ignores punctuation (.,;: etc) + is case-insensitive. Spaces are normalized.
+            </div>
+          </div>
+        </div>
+
+        <div style={{ width: 260, flex: "0 0 260px" }}>
+          <div style={ui.card}>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>WPM</div>
+            <div style={{ fontWeight: 900, fontSize: 24, marginTop: 6 }}>
+              {results ? results.wpm : liveStats.wpm}
+            </div>
+          </div>
+
+          <div style={{ height: 10 }} />
+
+          <div style={ui.card}>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Accuracy</div>
+            <div style={{ fontWeight: 900, fontSize: 24, marginTop: 6 }}>
+              {results ? `${results.accuracy}%` : `${liveStats.accuracy}%`}
+            </div>
+          </div>
+
+          <div style={{ height: 10 }} />
+
+          <div style={{ borderRadius: 12, padding: 12, background: "#fff", border: "1px solid rgba(0,0,0,0.03)" }}>
+            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
+              Leaderboard (top • {duration}s)
+            </div>
+            {board.length === 0 ? (
+              <div style={{ color: "#9aa0ad" }}>No scores yet — be the first!</div>
+            ) : (
+              board.map((it, idx) => (
+                <div key={it.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
+                  <div style={{ fontWeight: 900 }}>#{idx + 1} {it.name}</div>
+                  <div>{it.wpm} WPM</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* TIME OVER Banner */}
+      {showBanner && results && (
+        <div style={ui.banner}>
+          <div style={{ fontWeight: 900, fontSize: 18 }}>⏰ TIME OVER</div>
+          <div style={{ marginTop: 8, fontSize: 16 }}>
+            You scored <strong>{results.wpm} WPM</strong> at <strong>{results.accuracy}%</strong> accuracy.
+          </div>
+          <div style={{ marginTop: 8, color: "#374151" }}>
+            Estimated position: <strong>#{results.position}</strong>
+          </div>
+
+          <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={shareResultText}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 12,
+                background: "#fff",
+                border: "1px solid rgba(0,0,0,0.06)",
+              }}
+            >
+              Share text
+            </button>
+
+            <button
+              onClick={() => {
+                const ok = confirm("Save this score to the leaderboard? (local-only, saved in this browser)");
+                if (ok) saveToLeaderboard();
+              }}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 12,
+                background: "linear-gradient(90deg,#6d38ff,#d946ef)",
+                color: "white",
+                fontWeight: 900,
+                border: "none",
+              }}
+            >
+              Save to leaderboard
+            </button>
+
+            <button
+              onClick={() => {
+                setShowBanner(false);
+                setResults(null);
+              }}
+              style={{ padding: "10px 12px", borderRadius: 12 }}
+            >
+              Close
+            </button>
+
+            <button
+              onClick={() => {
+                setShowBanner(false);
+                setResults(null);
+                startRound();
+              }}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 12,
+                background: "linear-gradient(90deg,#6ee7b7,#32d583)",
+                color: "#04221b",
+                fontWeight: 900,
+                border: "none",
+              }}
+            >
+              Play again
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+
 
 /* =========================
    HELPERS
@@ -1969,22 +1997,14 @@ function renderHighlighted(target, typed) {
     else if (t === ch) style = styles.hlCorrect;
     else style = styles.hlWrong;
 
-    // preserve newlines
-    if (ch === "\n") {
-      out.push(<br key={`br_${i}`} />);
-    } else {
-      out.push(
-        <span key={i} style={style}>
-          {ch}
-        </span>
-      );
-    }
+    if (ch === "\n") out.push(<br key={`br_${i}`} />);
+    else out.push(<span key={i} style={style}>{ch}</span>);
   }
   return out;
 }
 
 /* =========================
-   STYLES (FULL)
+   STYLES
 ========================= */
 
 const styles = {
@@ -2497,78 +2517,6 @@ const styles = {
     boxShadow: "0 16px 34px rgba(0,0,0,0.18)",
   },
 
-  /* Creative Lab layout */
-  pgGrid: { display: "grid", gridTemplateColumns: "1.4fr 0.6fr", gap: 14 },
-
-  pgStudioCard: {
-    borderRadius: 18,
-    border: "1px solid rgba(109,56,255,0.14)",
-    background: "linear-gradient(180deg, rgba(109,56,255,0.06), rgba(255,120,190,0.03))",
-    boxShadow: "0 18px 40px rgba(109,56,255,0.08)",
-    overflow: "hidden",
-  },
-  pgToolbar: {
-    padding: 14,
-    borderBottom: "1px solid rgba(20,20,40,0.10)",
-    background: "rgba(255,255,255,0.65)",
-    backdropFilter: "blur(6px)",
-  },
-  pgToolbarRow: {
-    display: "flex",
-    gap: 10,
-    flexWrap: "wrap",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-
-  pgToolPill: {
-    padding: "8px 12px",
-    borderRadius: 999,
-    border: "1px solid rgba(20,20,40,0.12)",
-    background: "rgba(255,255,255,0.72)",
-    fontWeight: 900,
-    color: "#3b4052",
-    cursor: "pointer",
-  },
-  pgToolPillActive: {
-    background: "linear-gradient(180deg, #6d38ff, #6a44d6)",
-    color: "white",
-    border: "1px solid rgba(109,56,255,0.35)",
-    boxShadow: "0 14px 26px rgba(109,56,255,0.18)",
-  },
-
-  pgControl: { display: "flex", alignItems: "center", gap: 10 },
-  pgControlLabel: {
-    fontWeight: 900,
-    color: "#1b1d27",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-
-  pgSelect: {
-    borderRadius: 12,
-    border: "1px solid rgba(20,20,40,0.12)",
-    padding: "10px 10px",
-    fontWeight: 900,
-    background: "white",
-    color: "#1b1d27",
-    outline: "none",
-  },
-
-  pgHintRow: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 },
-  pgHintPill: {
-    padding: "7px 10px",
-    borderRadius: 999,
-    background: "rgba(109,56,255,0.10)",
-    border: "1px solid rgba(109,56,255,0.18)",
-    color: "#3b1ec8",
-    fontWeight: 900,
-    fontSize: 12,
-  },
-
-  pgActionsRow: { display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 },
-
   pgSoftBtn: {
     padding: "10px 14px",
     borderRadius: 999,
@@ -2586,70 +2534,9 @@ const styles = {
     boxShadow: "0 14px 26px rgba(109,56,255,0.18)",
   },
 
-  pgCanvasShell: { padding: 14 },
+  /* Arcade upgraded layout */
+  arcadeGrid2Col: { display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 14 },
 
-  pgCanvasWrap: {
-    width: "100%",
-    height: 420,
-    borderRadius: 18,
-    border: "1px solid rgba(20,20,40,0.12)",
-    overflow: "hidden",
-    position: "relative",
-    boxShadow: "0 20px 50px rgba(0,0,0,0.12)",
-    background: "linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.00))",
-  },
-
-  pgCanvas: {
-    width: "100%",
-    height: "100%",
-    display: "block",
-    touchAction: "none",
-    cursor: "crosshair",
-  },
-
-  pgGalleryCard: {
-    borderRadius: 18,
-    border: "1px solid rgba(20,20,40,0.10)",
-    background: "white",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.06)",
-    padding: 14,
-  },
-  pgGalleryTitle: { fontWeight: 950, color: "#1a1b23", fontSize: 16 },
-  pgGallerySub: { marginTop: 6, color: "#5a5f72", fontWeight: 650, lineHeight: 1.45 },
-  pgEmpty: {
-    marginTop: 14,
-    borderRadius: 16,
-    padding: 14,
-    background: "linear-gradient(180deg, rgba(109,56,255,0.06), rgba(255,120,190,0.03))",
-    border: "1px solid rgba(109,56,255,0.12)",
-    color: "#3b4052",
-    fontWeight: 700,
-    lineHeight: 1.5,
-  },
-  pgGalleryGrid: { marginTop: 12, display: "grid", gridTemplateColumns: "1fr", gap: 10 },
-  pgThumbBtn: {
-    textAlign: "left",
-    borderRadius: 16,
-    border: "1px solid rgba(20,20,40,0.10)",
-    background: "white",
-    overflow: "hidden",
-    cursor: "pointer",
-    boxShadow: "0 14px 30px rgba(0,0,0,0.05)",
-    padding: 0,
-  },
-  pgThumbImg: {
-    width: "100%",
-    height: 130,
-    objectFit: "cover",
-    display: "block",
-    background: "#0b1020",
-  },
-  pgThumbMeta: { padding: 10 },
-  pgThumbTitle: { fontWeight: 950, color: "#1a1b23", fontSize: 13 },
-  pgThumbDate: { marginTop: 3, color: "#5a5f72", fontWeight: 650, fontSize: 12 },
-  pgFooterNote: { marginTop: 12, color: "#5a5f72", fontSize: 12, lineHeight: 1.45 },
-
-  /* Arcade shared UI */
   arcadeCard: {
     borderRadius: 18,
     border: "1px solid rgba(109,56,255,0.14)",
@@ -2678,31 +2565,6 @@ const styles = {
     gap: 2,
     minWidth: 160,
   },
-
-  arcadeBottomRow: {
-    marginTop: 14,
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 14,
-  },
-
-  arcadeResultCard: {
-    borderRadius: 18,
-    border: "1px solid rgba(20,20,40,0.10)",
-    background: "white",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.06)",
-    padding: 14,
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-  arcadeLeaderboardCard: {
-    borderRadius: 18,
-    border: "1px solid rgba(20,20,40,0.10)",
-    background: "white",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.06)",
-    padding: 14,
-  },
   arcadeMiniLabel: {
     fontWeight: 950,
     color: "#1b1d27",
@@ -2710,44 +2572,35 @@ const styles = {
     letterSpacing: 1,
     textTransform: "uppercase",
   },
-  arcadeBigNumber: { fontWeight: 950, fontSize: 28, color: "#0b1020" },
   arcadeBigNumberSmall: { fontWeight: 950, fontSize: 22, color: "#0b1020" },
-  arcadeSmallText: { color: "#3b4052", fontWeight: 650, lineHeight: 1.5 },
-  arcadeEmpty: {
-    marginTop: 10,
-    borderRadius: 14,
-    padding: 12,
-    background: "linear-gradient(180deg, rgba(109,56,255,0.06), rgba(255,120,190,0.03))",
-    border: "1px solid rgba(109,56,255,0.12)",
-    color: "#3b4052",
-    fontWeight: 700,
-  },
 
-  lbList: { marginTop: 10, display: "flex", flexDirection: "column", gap: 8 },
-  lbRow: {
+  arcadeHowTo: {
+    marginTop: 12,
+    borderRadius: 16,
+    border: "1px solid rgba(20,20,40,0.10)",
+    background: "rgba(255,255,255,0.72)",
+    padding: 12,
+  },
+  arcadeHowTitle: { fontWeight: 950, color: "#2a1e6e" },
+  arcadeHowList: { margin: "8px 0 0", paddingLeft: 18, color: "#2b2f44", fontWeight: 650, lineHeight: 1.6 },
+
+  arcadeNameRow: {
+    marginTop: 12,
     display: "grid",
-    gridTemplateColumns: "70px 1fr 120px",
+    gridTemplateColumns: "80px 1fr",
     gap: 10,
     alignItems: "center",
-    padding: "10px 12px",
+  },
+  arcadeNameInput: {
     borderRadius: 14,
-    border: "1px solid rgba(20,20,40,0.10)",
-    background: "rgba(255,255,255,0.70)",
+    border: "1px solid rgba(20,20,40,0.12)",
+    padding: "12px 12px",
+    outline: "none",
+    fontWeight: 900,
+    color: "#111318",
+    background: "#fbfbfe",
   },
-  lbRank: { fontWeight: 950, color: "#3b1ec8" },
-  lbScore: { fontWeight: 950, color: "#0b1020" },
-  lbDate: { color: "#5a5f72", fontWeight: 700, textAlign: "right", fontSize: 12 },
-
-  badgeRow: { display: "flex", gap: 8, flexWrap: "wrap" },
-  badgePill: {
-    padding: "7px 10px",
-    borderRadius: 999,
-    background: "rgba(109,56,255,0.12)",
-    border: "1px solid rgba(109,56,255,0.22)",
-    color: "#3b1ec8",
-    fontWeight: 950,
-    fontSize: 12,
-  },
+  arcadeHintTiny: { gridColumn: "2 / span 1", marginTop: -4, color: "#5a5f72", fontSize: 12, fontWeight: 650 },
 
   /* Reaction pad */
   reactPad: {
@@ -2761,38 +2614,93 @@ const styles = {
     fontSize: 22,
     letterSpacing: 1,
     boxShadow: "0 20px 50px rgba(0,0,0,0.12)",
+    transition: "transform 120ms ease",
   },
   reactPadIdle: { background: "linear-gradient(180deg, #0b1020, #14183a)", color: "white" },
   reactPadWait: { background: "linear-gradient(180deg, #ff4d4d, #b51f1f)", color: "white" },
   reactPadGo: { background: "linear-gradient(180deg, #2cff8a, #12a64f)", color: "#07110b" },
 
-  /* Typing */
-  typingTopRow: {
-    marginTop: 12,
-    display: "grid",
-    gridTemplateColumns: "1.2fr 0.8fr",
-    gap: 14,
-  },
-
-  typingControls: {
+  /* Result banner */
+  resultBanner: {
+    marginTop: 14,
     borderRadius: 18,
     border: "1px solid rgba(20,20,40,0.10)",
     background: "white",
     boxShadow: "0 18px 40px rgba(0,0,0,0.06)",
     padding: 14,
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
+  },
+  resultBannerTop: { display: "flex", flexDirection: "column", gap: 4 },
+  resultBannerTitle: { fontWeight: 950, fontSize: 16, color: "#1a1b23" },
+  resultBannerSub: { color: "#3b4052", fontWeight: 650 },
+  resultBannerGrid: { marginTop: 12, display: "grid", gridTemplateColumns: "0.7fr 1.3fr", gap: 12 },
+  resultBannerBox: {
+    borderRadius: 16,
+    border: "1px solid rgba(20,20,40,0.10)",
+    background: "linear-gradient(180deg, rgba(109,56,255,0.06), rgba(255,120,190,0.03))",
+    padding: 12,
+  },
+  resultBig: { fontWeight: 950, fontSize: 26, color: "#0b1020", marginTop: 6 },
+  resultSmall: { marginTop: 6, color: "#3b4052", fontWeight: 650, lineHeight: 1.45 },
+
+  /* Side leaderboard */
+  lbSideCard: {
+    borderRadius: 18,
+    border: "1px solid rgba(20,20,40,0.10)",
+    background: "white",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.06)",
+    padding: 14,
+    height: "fit-content",
+  },
+  lbSideTop: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" },
+  lbSideTitle: { fontWeight: 950, fontSize: 16, color: "#1a1b23" },
+  lbSideSub: { marginTop: 6, color: "#5a5f72", fontWeight: 650, lineHeight: 1.45 },
+  lbSideHint: { marginTop: 12, color: "#5a5f72", fontSize: 12, fontWeight: 650 },
+
+  arcadeEmpty: {
+    marginTop: 10,
+    borderRadius: 14,
+    padding: 12,
+    background: "linear-gradient(180deg, rgba(109,56,255,0.06), rgba(255,120,190,0.03))",
+    border: "1px solid rgba(109,56,255,0.12)",
+    color: "#3b4052",
+    fontWeight: 700,
   },
 
-  typingControl: { display: "flex", flexDirection: "column", gap: 8 },
-
-  typingStats: {
+  lbList: { marginTop: 10, display: "flex", flexDirection: "column", gap: 8 },
+  lbRow2: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateColumns: "92px 1fr 120px",
+    gap: 10,
+    alignItems: "center",
+    padding: "10px 12px",
+    borderRadius: 14,
+    border: "1px solid rgba(20,20,40,0.10)",
+    background: "rgba(255,255,255,0.70)",
+  },
+  lbRank2: { fontWeight: 950, color: "#3b1ec8", display: "flex", alignItems: "center" },
+  lbName2: { fontWeight: 900, color: "#0b1020", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  lbScore2: { textAlign: "right", fontWeight: 950, color: "#0b1020" },
+
+  /* Typing */
+  typingControlsRow: {
+    marginTop: 12,
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 12,
+    alignItems: "stretch",
+  },
+  typingTimerPick: {
+    borderRadius: 18,
+    border: "1px solid rgba(20,20,40,0.10)",
+    background: "rgba(255,255,255,0.75)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.05)",
+    padding: 12,
+  },
+  typingLiveStats: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
     gap: 10,
   },
-
   statBox: {
     borderRadius: 16,
     border: "1px solid rgba(20,20,40,0.10)",
@@ -2800,30 +2708,39 @@ const styles = {
     padding: 12,
   },
 
-  progressCard: {
+  bigTimerCard: {
     borderRadius: 18,
     border: "1px solid rgba(20,20,40,0.10)",
-    background: "white",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.06)",
-    padding: 14,
+    background: "linear-gradient(180deg, #0b1020, #14183a)",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.16)",
+    padding: 12,
+    color: "white",
     display: "flex",
     flexDirection: "column",
     gap: 10,
+    transform: "translateZ(0)",
+    animation: "pulse 1.6s ease-in-out infinite",
   },
-
-  progressOuter: {
+  bigTimerUrgent: {
+    background: "linear-gradient(180deg, #ff4d4d, #b51f1f)",
+    animation: "pulseFast 0.8s ease-in-out infinite",
+  },
+  bigTimerLabel: { fontWeight: 950, letterSpacing: 2, opacity: 0.85, fontSize: 12 },
+  bigTimerNumber: { fontWeight: 950, fontSize: 34, lineHeight: 1 },
+  bigTimerBarOuter: {
     width: "100%",
-    height: 14,
+    height: 10,
     borderRadius: 999,
-    background: "rgba(20,20,40,0.08)",
+    background: "rgba(255,255,255,0.18)",
     overflow: "hidden",
-    border: "1px solid rgba(20,20,40,0.10)",
+    border: "1px solid rgba(255,255,255,0.18)",
   },
-  progressInner: {
+  bigTimerBarInner: {
     height: "100%",
     borderRadius: 999,
     background: "linear-gradient(90deg, #6d38ff, #ff78be, #6d38ff)",
     boxShadow: "0 0 18px rgba(109,56,255,0.35)",
+    transition: "width 300ms ease",
   },
 
   typingMain: {
@@ -2848,7 +2765,8 @@ const styles = {
     background: "#0b1020",
     color: "white",
     padding: 14,
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontFamily:
+      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     fontSize: 14,
     lineHeight: 1.55,
     whiteSpace: "pre-wrap",
@@ -2882,16 +2800,49 @@ const styles = {
 
   typingHint: { color: "#5a5f72", fontWeight: 650, fontSize: 12 },
 
-  hlCorrect: {
-    background: "rgba(44,255,138,0.22)",
-    borderBottom: "2px solid rgba(44,255,138,0.70)",
+  timeOverBanner: {
+    marginTop: 14,
+    borderRadius: 18,
+    border: "1px solid rgba(109,56,255,0.18)",
+    background:
+      "linear-gradient(135deg, rgba(109,56,255,0.14), rgba(255,120,190,0.10), rgba(255,255,255,0.95))",
+    boxShadow: "0 18px 40px rgba(109,56,255,0.10)",
+    padding: 14,
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+    alignItems: "center",
   },
-  hlWrong: {
-    background: "rgba(255,77,77,0.22)",
-    borderBottom: "2px solid rgba(255,77,77,0.70)",
-  },
+  timeOverLeft: { display: "flex", flexDirection: "column", gap: 6 },
+  timeOverTitle: { fontWeight: 950, fontSize: 16, color: "#1a1b23" },
+  timeOverSub: { color: "#2b2f44", fontWeight: 650 },
+  timeOverRight: { display: "flex", gap: 10, flexWrap: "wrap" },
+
+  hlCorrect: { background: "rgba(44,255,138,0.22)", borderBottom: "2px solid rgba(44,255,138,0.70)" },
+  hlWrong: { background: "rgba(255,77,77,0.22)", borderBottom: "2px solid rgba(255,77,77,0.70)" },
   hlPending: { opacity: 0.9 },
 
-  /* Responsive */
-  "@media (max-width: 980px)": {},
+  /* Minimal keyframe support via inline style tag (optional) */
 };
+
+(function injectArcadeKeyframes() {
+  const id = "arcade-keyframes";
+  if (typeof document === "undefined") return;
+  if (document.getElementById(id)) return;
+  const style = document.createElement("style");
+  style.id = id;
+  style.innerHTML = `
+    @keyframes pulse {
+      0% { transform: translateZ(0) scale(1); }
+      50% { transform: translateZ(0) scale(1.02); }
+      100% { transform: translateZ(0) scale(1); }
+    }
+    @keyframes pulseFast {
+      0% { transform: translateZ(0) scale(1); }
+      50% { transform: translateZ(0) scale(1.04); }
+      100% { transform: translateZ(0) scale(1); }
+    }
+  `;
+  document.head.appendChild(style);
+})();
