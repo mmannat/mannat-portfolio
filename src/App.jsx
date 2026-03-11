@@ -21,6 +21,17 @@ export default function App() {
 function PortfolioHome() {
   const [active, setActive] = useState("about");
 
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia("(max-width: 900px)").matches
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   const sectionIds = useMemo(
     () => ["about", "education", "resume", "skills", "projects", "contact", "playground"],
     []
@@ -31,7 +42,7 @@ function PortfolioHome() {
       const offsets = sectionIds
         .map((id) => {
           const el = document.getElementById(id);
-          if (!el) return { id, top: Number.POSITIVE_INFINITY };
+          if (!el) return { id, top: Infinity };
           const rect = el.getBoundingClientRect();
           return { id, top: Math.abs(rect.top - 120) };
         })
@@ -54,108 +65,67 @@ function PortfolioHome() {
 
   return (
     <div style={styles.page}>
-      <div style={styles.sidebar}>
-        <div style={styles.profileWrap}>
-          <div style={styles.avatarOuter}>
-            <img
-              src={profileImg}
-              alt="Mannat"
-              style={styles.avatar}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                e.currentTarget.parentElement.style.background =
-                  "radial-gradient(circle at 30% 30%, #9c7cff, #5a31ff)";
-                e.currentTarget.parentElement.style.color = "white";
-                e.currentTarget.parentElement.style.display = "flex";
-                e.currentTarget.parentElement.style.alignItems = "center";
-                e.currentTarget.parentElement.style.justifyContent = "center";
-                e.currentTarget.parentElement.style.fontWeight = 800;
-                e.currentTarget.parentElement.style.fontSize = "38px";
-                e.currentTarget.parentElement.innerText = "M";
-              }}
-            />
+      <div style={styles.shell}>
+
+        {/* SIDEBAR */}
+        <div
+          style={
+            isMobile
+              ? { ...styles.sidebar, ...styles.sidebarMobile }
+              : styles.sidebar
+          }
+        >
+          <div style={styles.profileWrap}>
+            <div style={styles.avatarOuter}>
+              <img src={profileImg} alt="Mannat" style={styles.avatar} />
+            </div>
+            <div style={styles.name}>MANNAT</div>
+            <div style={styles.tagline}>Software • UI • QA</div>
           </div>
-          <div style={styles.name}>MANNAT</div>
-          <div style={styles.tagline}>Software • UI • QA</div>
+
+          <nav style={isMobile ? styles.navMobile : styles.nav}>
+            <SideBtn label="About" active={active === "about"} onClick={() => scrollTo("about")} />
+            <SideBtn label="Education" active={active === "education"} onClick={() => scrollTo("education")} />
+            <SideBtn label="Resume" active={active === "resume"} onClick={() => scrollTo("resume")} />
+            <SideBtn label="Skills" active={active === "skills"} onClick={() => scrollTo("skills")} />
+            <SideBtn label="Projects" active={active === "projects"} onClick={() => scrollTo("projects")} />
+            <SideBtn label="Contact" active={active === "contact"} onClick={() => scrollTo("contact")} />
+            <SideBtn label="Playground" active={active === "playground"} onClick={() => scrollTo("playground")} />
+          </nav>
+
+          <div style={styles.sidebarFooter}>Built with React + Vite</div>
         </div>
 
-        <nav style={styles.nav}>
-          <SideBtn label="About" active={active === "about"} onClick={() => scrollTo("about")} />
-          <SideBtn
-            label="Education"
-            active={active === "education"}
-            onClick={() => scrollTo("education")}
-          />
-          <SideBtn label="Skills" active={active === "skills"} onClick={() => scrollTo("skills")} />
-          <SideBtn
-            label="Projects"
-            active={active === "projects"}
-            onClick={() => scrollTo("projects")}
-          />
-          <SideBtn
-            label="Contact"
-            active={active === "contact"}
-            onClick={() => scrollTo("contact")}
-          />
-        </nav>
+        {/* MAIN */}
+        <div style={styles.main}>
+          <Section id="about" title="About">
+            <AboutCard onJump={scrollTo} />
+          </Section>
 
-        <div style={styles.sidebarFooter}>Built with React + Vite</div>
-      </div>
+          <Section id="education" title="Education">
+            <EducationCard />
+          </Section>
 
-      <div style={styles.main}>
-        <div style={styles.topCard}>
-          <div style={styles.heroTitle}>
-            Software Engineer building web + mobile products with strong testing, debugging, and UI
-            implementation skills.
-          </div>
+          <Section id="resume" title="Resume">
+            <ResumeCard />
+          </Section>
 
-          <div style={styles.topTabs}>
-            <TopTab label="Resume" active={active === "resume"} onClick={() => scrollTo("resume")} />
-            <TopTab
-              label="Projects"
-              active={active === "projects"}
-              onClick={() => scrollTo("projects")}
-            />
-            <TopTab
-              label="Contact"
-              active={active === "contact"}
-              onClick={() => scrollTo("contact")}
-            />
-            <TopTab
-              label="Playground"
-              active={active === "playground"}
-              onClick={() => scrollTo("playground")}
-            />
-          </div>
+          <Section id="skills" title="Skills">
+            <Skills />
+          </Section>
+
+          <Section id="projects" title="Projects">
+            <Projects />
+          </Section>
+
+          <Section id="contact" title="Contact">
+            <Contact />
+          </Section>
+
+          <Section id="playground" title="Playground">
+            <PlaygroundMini />
+          </Section>
         </div>
-
-        <Section id="about" title="About">
-          <AboutCard onJump={(id) => scrollTo(id)} />
-        </Section>
-
-        <Section id="education" title="Education">
-          <EducationCard />
-        </Section>
-
-        <Section id="resume" title="Resume">
-          <ResumeCard />
-        </Section>
-
-        <Section id="skills" title="Skills">
-          <Skills />
-        </Section>
-
-        <Section id="projects" title="Projects">
-          <Projects />
-        </Section>
-
-        <Section id="contact" title="Contact">
-          <Contact />
-        </Section>
-
-        <Section id="playground" title="Playground">
-          <PlaygroundMini />
-        </Section>
       </div>
     </div>
   );
@@ -499,6 +469,8 @@ function EducationCard() {
     { label: "AI", icon: "🤖" },
     { label: "Mobile Programming", icon: "📱" },
     { label: "Graphic Designing", icon: "🎨" },
+    { label: "Cybersecurity", icon: "🔐" },
+  { label: "Computer Networks", icon: "🌐" },
   ];
 
   return (
@@ -688,16 +660,38 @@ function Skills() {
    PROJECTS
 ========================= */
 
+
 function Projects() {
   const navigate = useNavigate();
 
   const items = [
+    // ⭐ RECENT (TOP)
     {
-      name: "QA Test Lab (interactive)",
+      name: "Mannat Portfolio (this site)",
+      lang: "React + Vite",
+      desc: "My personal portfolio with sections, projects, contact form, and a mini arcade (Reaction + Typing PRO). Deployed on GitHub Pages.",
+      href: "https://mmannat.github.io/mannat-portfolio/",
+    },
+    {
+      name: "Great Indian Grocery — E-Commerce Redesign + QA Case Study",
+      lang: "WordPress",
+      desc: "Redesigned the full site UX and storefront.",
+      href: "https://github.com/mmannat/great-indian-grocery-ecommerce-platform",
+    },
+
+    // ✅ EXISTING
+    {
+      name: "QA Test Lab",
       lang: "QA / Automation",
       desc: "Mini case-study page showing API checks, bug cards, and automation run history.",
       onClick: () => navigate("/projects/qa-test-lab"),
       internal: true,
+    },
+    {
+      name: "android-zoo-directory",
+      lang: "Java",
+      desc: "Android Zoo Directory app with list + detail screens.",
+      href: "https://github.com/mmannat/android-zoo-directory",
     },
     {
       name: "Student-Database-Management-System",
@@ -708,22 +702,37 @@ function Projects() {
     {
       name: "tic-tac-toe-game",
       lang: "Python",
-      desc: "Tic-tac-toe game (Python).",
+      desc: "Tic-tac-toe game.",
       href: "https://github.com/mmannat/tic-tac-toe-game",
     },
-    {
-      name: "android-zoo-directory",
-      lang: "Java",
-      desc: "Android Zoo Directory app with list + detail screens (course project, cleaned for portfolio).",
-      href: "https://github.com/mmannat/android-zoo-directory",
-    },
   ];
+
+  // 🔥 Devicon mapping
+  const getDevIcon = (lang) => {
+    switch (lang) {
+      case "React + Vite":
+        return "devicon-react-original";
+      case "Java":
+        return "devicon-java-plain";
+      case "Python":
+        return "devicon-python-plain";
+      case "C++":
+        return "devicon-cplusplus-plain";
+      case "QA / Automation":
+        return "devicon-selenium-original";
+      case "WordPress":
+        return "devicon-wordpress-plain";
+      default:
+        return "devicon-github-original";
+    }
+  };
+
+
 
   return (
     <div style={styles.projectsWrap}>
       <div style={styles.projectsHint}>
-        Click a project to open it. The “QA Test Lab” card opens a mini case-study page inside this
-        portfolio.
+        Click a project to open it.
       </div>
 
       <div style={styles.projectsGrid}>
@@ -731,13 +740,36 @@ function Projects() {
           if (p.internal) {
             return (
               <button
-                key={p.name}
-                onClick={p.onClick}
-                style={{ ...styles.projectCard, textAlign: "left", cursor: "pointer" }}
+              key={p.name}
+              onClick={p.onClick}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow = "0 0 28px rgba(147,51,234,0.55)";
+              }
+            }
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 20px 45px rgba(109,56,255,0.14)";
+            }
+          }
+  style={{
+    ...styles.projectCard,
+                  textAlign: "left",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  justifyContent: "flex-start",
+}}
               >
                 <div style={styles.projectTop}>
                   <div style={styles.projectName}>{p.name}</div>
-                  <div style={styles.projectPill}>{p.lang}</div>
+                  <div style={styles.projectPillBlack}>
+                    <div style={styles.projectPillIconWrap}>
+                      <i className={getDevIcon(p.lang)} style={styles.projectPillIcon} />
+                      </div>
+                      <span>{p.lang}</span>
+                      </div>
                 </div>
                 <div style={styles.projectDesc}>{p.desc}</div>
                 <div style={styles.projectLink}>Open case study →</div>
@@ -746,11 +778,30 @@ function Projects() {
           }
 
           return (
-            <a key={p.name} href={p.href} target="_blank" rel="noreferrer" style={styles.projectCard}>
+            <a
+  key={p.name}
+  href={p.href}
+  target="_blank"
+  rel="noreferrer"
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = "translateY(-4px)";
+    e.currentTarget.style.boxShadow = "0 0 28px rgba(147,51,234,0.55)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = "translateY(0)";
+    e.currentTarget.style.boxShadow = "0 20px 45px rgba(109,56,255,0.14)";
+  }}
+  style={styles.projectCard}
+>
               <div style={styles.projectTop}>
                 <div style={styles.projectName}>{p.name}</div>
-                <div style={styles.projectPill}>{p.lang}</div>
-              </div>
+                <div style={styles.projectPillBlack}>
+                  <div style={styles.projectPillIconWrap}>
+                    <i className={getDevIcon(p.lang)} style={styles.projectPillIcon} />
+                    </div>
+                    <span>{p.lang}</span>
+                    </div>
+                  </div>
               <div style={styles.projectDesc}>{p.desc}</div>
               <div style={styles.projectLink}>Open on GitHub →</div>
             </a>
@@ -2145,13 +2196,23 @@ function renderHighlighted(target, typed) {
 ========================= */
 
 const styles = {
+  
+
   page: {
-    minHeight: "100vh",
-    display: "flex",
-    background: "linear-gradient(180deg, #f6f7fb, #f1f2f9)",
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif',
-    color: "#12131a",
-  },
+  minHeight: "100vh",
+  background: "linear-gradient(180deg, #f6f7fb, #f1f2f9)",
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif',
+  color: "#12131a",
+  width: "100%",
+},
+
+shell: {
+  width: "100%",
+  margin: 0,
+  display: "flex",
+  alignItems: "stretch",
+},
 
   sidebar: {
     width: 260,
@@ -2166,6 +2227,44 @@ const styles = {
     flexDirection: "column",
     gap: 14,
   },
+
+  sidebarMobile: {
+  position: "relative",
+  width: "100%",
+  minWidth: "100%",
+  height: "auto",
+},
+projectPillBlack: {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 10,
+  padding: "8px 16px",
+  borderRadius: 999,
+  background: "linear-gradient(135deg, #5b2dd6, #7c3aed, #9333ea)",
+  backgroundSize: "200% 200%",
+  animation: "pillShift 6s ease infinite",
+  color: "white",
+  fontWeight: 900,
+  fontSize: 12,
+  letterSpacing: 0.5,
+  border: "1px solid rgba(255,255,255,0.15)",
+  boxShadow: "0 0 18px rgba(124,58,237,0.35)",
+},
+
+projectPillIconWrap: {
+  width: 26,
+  height: 26,
+  borderRadius: 999,
+  background: "rgba(255,214,102,0.95)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+projectPillIcon: {
+  fontSize: 14,
+  color: "#0b1020",
+},
 
   profileWrap: {
     background: "rgba(255,255,255,0.12)",
@@ -2199,6 +2298,13 @@ const styles = {
 
   nav: { display: "flex", flexDirection: "column", gap: 10 },
 
+  navMobile: {
+  display: "flex",
+  flexDirection: "row",
+  flexWrap: "wrap",
+  gap: 10,
+},
+
   sideBtn: {
     width: "100%",
     padding: "12px 14px",
@@ -2219,8 +2325,11 @@ const styles = {
 
   sidebarFooter: { marginTop: "auto", color: "rgba(255,255,255,0.8)", fontSize: 12 },
 
-  main: { flex: 1, padding: 22, maxWidth: 1100 },
-
+main: {
+  flex: 1,
+  padding: 22,
+  maxWidth: "none",
+},
   topCard: {
     background: "white",
     borderRadius: 22,
@@ -2486,14 +2595,15 @@ const styles = {
     gap: 14,
   },
   projectCard: {
-    borderRadius: 18,
-    padding: 14,
-    background: "linear-gradient(180deg, rgba(109,56,255,0.14), rgba(255,120,190,0.06))",
-    color: "#1b1d27",
-    textDecoration: "none",
-    boxShadow: "0 20px 45px rgba(109,56,255,0.14)",
-    border: "1px solid rgba(109,56,255,0.18)",
-  },
+  borderRadius: 18,
+  padding: 14,
+  background: "linear-gradient(180deg, rgba(109,56,255,0.14), rgba(255,120,190,0.06))",
+  color: "#1b1d27",
+  textDecoration: "none",
+  boxShadow: "0 20px 45px rgba(109,56,255,0.14)",
+  border: "1px solid rgba(109,56,255,0.18)",
+  transition: "all 0.25s ease",
+},
   projectTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 },
   projectName: { fontWeight: 900, fontSize: 15, color: "#12131a" },
   projectPill: {
@@ -2980,6 +3090,11 @@ const styles = {
       50% { transform: translateZ(0) scale(1.04); }
       100% { transform: translateZ(0) scale(1); }
     }
+      @keyframes pillShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
   `;
   document.head.appendChild(style);
 })();
