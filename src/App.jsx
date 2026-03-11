@@ -86,9 +86,9 @@ function PortfolioHome() {
           <nav style={isMobile ? styles.navMobile : styles.nav}>
             <SideBtn label="About" active={active === "about"} onClick={() => scrollTo("about")} />
             <SideBtn label="Education" active={active === "education"} onClick={() => scrollTo("education")} />
-            <SideBtn label="Experience" active={active === "experience"} onClick={() => scrollTo("experience")} />
             <SideBtn label="Resume" active={active === "resume"} onClick={() => scrollTo("resume")} />
             <SideBtn label="Skills" active={active === "skills"} onClick={() => scrollTo("skills")} />
+            <SideBtn label="Experience" active={active === "experience"} onClick={() => scrollTo("experience")} />
             <SideBtn label="Projects" active={active === "projects"} onClick={() => scrollTo("projects")} />
             <SideBtn label="Contact" active={active === "contact"} onClick={() => scrollTo("contact")} />
             <SideBtn label="Playground" active={active === "playground"} onClick={() => scrollTo("playground")} />
@@ -113,6 +113,10 @@ function PortfolioHome() {
 
           <Section id="skills" title="Skills">
             <Skills />
+          </Section>
+
+          <Section id="experience" title="Experience">
+            <ExperienceCard />
           </Section>
 
           <Section id="projects" title="Projects">
@@ -657,6 +661,60 @@ function Skills() {
 
 
 
+/* =========================
+   EXPERIENCE
+========================= */
+
+
+function ExperienceCard() {
+  return (
+    <div style={styles.eduWrap}>
+      <div style={styles.eduCard}>
+        <div style={styles.eduTop}>
+          <div style={styles.eduLeftTop}>
+            <div style={styles.eduCapRow}>
+              <div style={styles.eduCapIcon}>🛒</div>
+              <div style={styles.eduBadge}>GK Business Group</div>
+            </div>
+
+            <div style={styles.eduSchool}>E-Commerce Platform Product & Implementation Lead</div>
+            <div style={styles.eduDegree}>WordPress • WooCommerce • Elementor • PHP • MySQL</div>
+          </div>
+
+          <div style={styles.eduDatePill}>Dec 2025 • Current</div>
+        </div>
+
+        <div style={styles.eduDivider} />
+
+        <div style={styles.eduGrid}>
+          <div style={styles.eduMini}>
+            <div style={styles.eduMiniLabel}>What I’m doing</div>
+
+            <div style={styles.eduMiniText}>
+              Leading the redesign and implementation of a WooCommerce-based e-commerce platform supporting 2,500+
+              products. Acting as a cross-functional stakeholder between UX/front-end decisions and back-end
+              configuration to ensure features ship cleanly and match business requirements.
+            </div>
+          </div>
+
+          <div style={styles.eduMini}>
+            <div style={styles.eduMiniLabel}>Impact</div>
+
+            <ul style={{ margin: 0, paddingLeft: 18, color: "#2b2f44", fontWeight: 650, lineHeight: 1.65 }}>
+              <li>Defined homepage UX structure, navigation flows, and promotional modules</li>
+              <li>Configured product categories, metadata, inventory workflows, and timed campaigns</li>
+              <li>Implemented curbside pickup workflow + checkout metadata capture</li>
+              <li>Directed functional validation of cart, checkout, and content updates</li>
+              <li>Final staging in progress, launch preparation underway</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 /* =========================
    PROJECTS
@@ -672,7 +730,7 @@ function Projects() {
       name: "Mannat Portfolio (this site)",
       lang: "React + Vite",
       desc: "My personal portfolio with sections, projects, contact form, and a mini arcade (Reaction + Typing PRO). Deployed on GitHub Pages.",
-      href: "https://mmannat.github.io/mannat-portfolio/",
+      href: " https://github.com/mmannat/mannat-portfolio ",
     },
     {
       name: "Great Indian Grocery — E-Commerce Redesign + QA Case Study",
