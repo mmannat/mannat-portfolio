@@ -415,7 +415,7 @@ function AboutCard({ onJump }) {
         <div style={styles.aboutHeadline}>Hi, I’m Mannat 👋</div>
 
         <div style={styles.aboutText}>
-          Hands-on experience across multiple types of QA testing and team collaboration, paired with
+          Hands-on experience across multiple types of  testing and team collaboration, paired with
           strong problem-solving, communication, and adaptability, consistently leads to high-quality
           releases and reliable user experiences.
         </div>
