@@ -33,7 +33,7 @@ function PortfolioHome() {
   }, []);
 
   const sectionIds = useMemo(
-    () => ["about", "education", "resume", "skills", "projects", "contact", "playground"],
+    () => ["about", "education", "resume", "skills", , "experience", "projects", "contact", "playground"],
     []
   );
 
@@ -86,6 +86,7 @@ function PortfolioHome() {
           <nav style={isMobile ? styles.navMobile : styles.nav}>
             <SideBtn label="About" active={active === "about"} onClick={() => scrollTo("about")} />
             <SideBtn label="Education" active={active === "education"} onClick={() => scrollTo("education")} />
+            <SideBtn label="Experience" active={active === "experience"} onClick={() => scrollTo("experience")} />
             <SideBtn label="Resume" active={active === "resume"} onClick={() => scrollTo("resume")} />
             <SideBtn label="Skills" active={active === "skills"} onClick={() => scrollTo("skills")} />
             <SideBtn label="Projects" active={active === "projects"} onClick={() => scrollTo("projects")} />
@@ -509,9 +510,10 @@ function EducationCard() {
           <div style={styles.eduMini}>
             <div style={styles.eduMiniLabel}>Highlights</div>
             <div style={styles.eduMiniText}>
+              
               Built strong fundamentals in software engineering and problem-solving while working on projects across
-              web development, mobile programming, and design. Currently expanding my skills in AI and Generative AI
-              with a focus on practical, portfolio-ready applications.
+              web development, mobile programming, and design. Continuously expanding my knowledge of modern software
+              technologies and applying them through practical, real-world projects.
             </div>
           </div>
         </div>
