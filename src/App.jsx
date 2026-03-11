@@ -536,7 +536,6 @@ function ResumeCard() {
       <div style={styles.resumeLeft}>
         <div style={styles.resumeTitle}>Open my resume</div>
         <div style={styles.resumeText}>
-          Served from <b>/public/resume.pdf</b>.
         </div>
 
         <a
@@ -551,8 +550,8 @@ function ResumeCard() {
 </a>
 
         <div style={styles.noteSmall}>
-          If you still see a blank PDF: right-click <b>public/resume.pdf</b> in VS Code → “Reveal in Finder” → open it.
-          If it’s blank there too, the file is empty/corrupted and needs re-export.
+          Explore My Resume
+          A detailed overview of my skills, experience, and projects.
         </div>
       </div>
 
@@ -730,7 +729,7 @@ function Projects() {
       name: "Mannat Portfolio (this site)",
       lang: "React + Vite",
       desc: "My personal portfolio with sections, projects, contact form, and a mini arcade (Reaction + Typing PRO). Deployed on GitHub Pages.",
-      href: " https://github.com/mmannat/mannat-portfolio ",
+      href: " https://mmannat.github.io/mannat-portfolio ",
     },
     {
       name: "Great Indian Grocery — E-Commerce Redesign + QA Case Study",
