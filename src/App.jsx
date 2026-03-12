@@ -729,7 +729,7 @@ function Projects() {
       name: "Mannat Portfolio (this site)",
       lang: "React + Vite",
       desc: "My personal portfolio with sections, projects, contact form, and a mini arcade (Reaction + Typing PRO). Deployed on GitHub Pages.",
-      href: " https://mmannat.github.io/mannat-portfolio ",
+      href: " https://github.com/mmannat/mannat-portfolio ",
     },
     {
       name: "Great Indian Grocery — E-Commerce Redesign + QA Case Study",
