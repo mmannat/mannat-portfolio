@@ -539,15 +539,13 @@ function ResumeCard() {
         </div>
 
         <a
-  href={`${import.meta.env.BASE_URL}resume.pdf`}
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{ textDecoration: "none" }}
->
-  <button style={styles.resumeBtn}>
-    View Resume PDF →
-  </button>
-</a>
+          href={`${import.meta.env.BASE_URL}mannat_resume.pdf`}
+          target="_blank"
+          rel="noreferrer"
+          style={{ ...styles.resumeBtn, textDecoration: "none" }}
+        >
+          View Resume PDF →
+        </a>
 
         <div style={styles.noteSmall}>
           Explore My Resume
