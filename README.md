@@ -1,5 +1,22 @@
 # React + Vite
 
+## Backend API (Typing PRO leaderboard)
+
+The REST API lives in a **separate repo** next to this one, not inside this folder:
+
+- `../mannat-portfolio-api` (sibling of `mannat-portfolio` on disk)
+
+From **this** directory you can run:
+
+- `npm run api:install` — install API dependencies once
+- `npm run api:start` — start the API on port **3001** (requires `../mannat-portfolio-api/.env` with `MONGODB_URI`)
+
+Or open a terminal in `mannat-portfolio-api` and run `npm install` then `npm start`.
+
+Copy `mannat-portfolio-api/.env.example` → `.env` there and set your Atlas URI. In this repo, `.env` should set `VITE_API_BASE=http://localhost:3001` for local dev (see `.env.example`).
+
+---
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

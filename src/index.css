@@ -3,9 +3,9 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light;
-  color: #213547;
-  background-color: #f5f5f7;
+  color-scheme: dark;
+  color: #e2e8f0;
+  background-color: #05060f;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,7 +22,7 @@ html, body, #root {
 body {
   min-width: 320px;
   min-height: 100vh;
-  background: #f5f5f7;
+  background: #05060f;
   overflow-x: hidden;
 }
 
@@ -51,4 +51,148 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-} 
+}
+
+/* Portfolio home — sidebar hover / focus (dark nav) */
+aside[aria-label="Primary"] button.sidebar-nav-btn:hover:not([aria-current="true"]) {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: rgba(167, 139, 250, 0.22);
+  color: rgba(248, 250, 252, 0.95);
+}
+
+aside[aria-label="Primary"] button.sidebar-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(167, 139, 250, 0.28);
+  color: #f8fafc;
+}
+
+aside[aria-label="Primary"] a.sidebar-social-a:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(167, 139, 250, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 20px rgba(139, 92, 246, 0.22);
+}
+
+aside[aria-label="Primary"] button.sidebar-nav-btn:focus-visible,
+aside[aria-label="Primary"] button.sidebar-collapse-btn:focus-visible,
+aside[aria-label="Primary"] a.sidebar-social-a:focus-visible {
+  outline: 2px solid rgba(167, 139, 250, 0.85);
+  outline-offset: 2px;
+}
+
+.portfolio-interactive-root .il-start-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.portfolio-interactive-root .il-play-again:hover {
+  border-color: rgba(232, 121, 249, 0.45);
+  background: rgba(15, 23, 42, 0.65);
+}
+
+.portfolio-interactive-root .il-game-card:hover {
+  border-color: rgba(59, 130, 246, 0.22);
+}
+
+.portfolio-interactive-root .il-how-steps {
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+}
+
+.portfolio-resume-root a.resume-pdf-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 14px 32px rgba(91, 33, 182, 0.42),
+    0 0 22px rgba(217, 70, 239, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+.portfolio-resume-root a.resume-pdf-cta:focus-visible {
+  outline: 2px solid rgba(232, 121, 249, 0.75);
+  outline-offset: 3px;
+}
+
+.portfolio-resume-root .resume-hero-card:hover {
+  border-color: rgba(59, 130, 246, 0.22) !important;
+}
+
+.portfolio-resume-root .resume-info-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.portfolio-projects-root a.pr-project-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(232, 121, 249, 0.35) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 44px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(167, 139, 250, 0.12);
+}
+
+.portfolio-projects-root a.pr-project-card:focus-visible {
+  outline: 2px solid rgba(232, 121, 249, 0.65);
+  outline-offset: 3px;
+}
+
+.portfolio-projects-root a.pr-cta-btn:hover {
+  border-color: rgba(244, 114, 182, 0.65);
+  background: rgba(15, 23, 42, 0.65);
+  box-shadow: 0 0 28px rgba(244, 114, 182, 0.12);
+}
+
+.portfolio-projects-root a.pr-cta-btn:focus-visible {
+  outline: 2px solid rgba(244, 114, 182, 0.7);
+  outline-offset: 2px;
+}
+
+/* About hero — hover polish */
+.portfolio-about-hero-root .about-skill-tile:hover {
+  border-color: rgba(196, 181, 253, 0.4) !important;
+  box-shadow:
+    0 8px 26px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 16px rgba(139, 92, 246, 0.12) !important;
+}
+
+.portfolio-about-hero-root .about-cta-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow:
+    0 10px 28px rgba(91, 33, 182, 0.38),
+    0 0 18px rgba(217, 70, 239, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+.portfolio-about-hero-root .about-cta-ghost:hover {
+  filter: brightness(1.05);
+  box-shadow:
+    0 10px 28px rgba(79, 70, 229, 0.34),
+    0 0 18px rgba(168, 85, 247, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.portfolio-about-hero-root button:hover {
+  border-color: transparent !important;
+}
+
+/* Education banner — focus tile hover */
+.portfolio-edu-banner-root .edu-banner-focus-tile:hover {
+  border-color: rgba(196, 181, 253, 0.32) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 26px rgba(0, 0, 0, 0.28),
+    0 0 18px rgba(139, 92, 246, 0.1) !important;
+}
+
+/* Experience timeline — row hover */
+.portfolio-exp-root .exp-bullet-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(167, 139, 250, 0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Skills — row hover */
+.portfolio-skills-root .skills-row-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(232, 121, 249, 0.22) !important;
+}
