@@ -1,6 +1,6 @@
 # React + Vite
 
-## Backend API (Typing PRO leaderboard)
+## Backend API (Typing PRO leaderboard + contact form)
 
 The REST API lives in a **separate repo** next to this one, not inside this folder:
 
@@ -13,7 +13,20 @@ From **this** directory you can run:
 
 Or open a terminal in `mannat-portfolio-api` and run `npm install` then `npm start`.
 
-Copy `mannat-portfolio-api/.env.example` → `.env` there and set your Atlas URI. In this repo, `.env` should set `VITE_API_BASE=http://localhost:3001` for local dev (see `.env.example`).
+Copy `mannat-portfolio-api/.env.example` → `.env` there and set your Atlas URI. For **local** portfolio dev, copy this repo’s `.env.example` → `.env` and set `VITE_API_BASE=http://localhost:3001` (no trailing slash).
+
+### GitHub Pages + live API (Render)
+
+The value of **`VITE_API_BASE` is baked in at build time**. After you deploy the API (see `mannat-portfolio-api/DEPLOY-RENDER.md`), rebuild and redeploy the site with your **HTTPS** Render URL (no trailing slash), for example:
+
+```bash
+VITE_API_BASE=https://YOUR-SERVICE.onrender.com npm run build
+npm run deploy
+```
+
+Or put `VITE_API_BASE=...` in a **local** `.env.production` (optional; do not commit secrets—only the public API URL) and run `npm run build` then `npm run deploy`.
+
+Then open [the live site](https://mmannat.github.io/mannat-portfolio/) → **Interactive Lab** and confirm the leaderboard loads.
 
 ---
 
