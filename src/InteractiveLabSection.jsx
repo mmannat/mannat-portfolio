@@ -129,6 +129,11 @@ const ils = {
     padding: "clamp(14px, 2.4vw, 20px) clamp(16px, 3vw, 24px) clamp(10px, 1.8vw, 14px)",
     flexWrap: "wrap",
   },
+  headerRowStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 12,
+  },
   titleBlock: { flex: "1 1 280px", minWidth: 0 },
   titleLine: {
     display: "flex",
@@ -188,6 +193,12 @@ const ils = {
     cursor: "pointer",
     fontFamily: "inherit",
   },
+  aboutBtnMobile: {
+    width: "100%",
+    justifyContent: "center",
+    minHeight: 44,
+    boxSizing: "border-box",
+  },
   aboutPanel: {
     marginTop: 10,
     padding: 12,
@@ -199,17 +210,23 @@ const ils = {
     lineHeight: 1.55,
     maxWidth: 420,
   },
-  mainGrid: {
+  labShellGrid: {
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1.15fr) minmax(280px, 0.85fr)",
     gap: 18,
     padding: "clamp(14px, 2.5vw, 22px) clamp(16px, 3vw, 24px) 8px",
     alignItems: "start",
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
   },
-  mainGridStack: {
-    gridTemplateColumns: "1fr",
+  labShellWide: {
+    gridTemplateColumns: "minmax(0, 1.15fr) minmax(260px, 0.85fr)",
+    gridTemplateAreas: '"game lb" "how lb" "tip lb"',
   },
-  leftCol: { minWidth: 0, display: "flex", flexDirection: "column", gap: 14 },
+  labShellStacked: {
+    gridTemplateColumns: "minmax(0, 1fr)",
+    gridTemplateAreas: '"game" "lb" "how" "tip"',
+  },
   gameCard: {
     position: "relative",
     borderRadius: 16,
@@ -277,6 +294,10 @@ const ils = {
     border: "1px solid rgba(51, 65, 107, 0.45)",
     background: "rgba(15, 23, 42, 0.5)",
   },
+  nameRowStacked: {
+    padding: "10px 12px",
+    flexWrap: "wrap",
+  },
   nameInput: {
     flex: 1,
     minWidth: 0,
@@ -284,7 +305,7 @@ const ils = {
     outline: "none",
     background: "transparent",
     color: "rgba(248, 250, 252, 0.96)",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 600,
     padding: "10px 4px",
     fontFamily: "inherit",
@@ -307,6 +328,12 @@ const ils = {
     backgroundSize: "140% 140%",
     boxShadow:
       "0 10px 28px rgba(91, 33, 182, 0.38), 0 0 18px rgba(217, 70, 239, 0.14), inset 0 1px 0 rgba(255,255,255,0.12)",
+  },
+  startBtnFull: {
+    width: "100%",
+    boxSizing: "border-box",
+    minHeight: 48,
+    marginTop: 14,
   },
   infoRow: {
     position: "relative",
@@ -347,11 +374,11 @@ const ils = {
   targetBox: {
     borderRadius: 14,
     padding: 14,
-    minHeight: 120,
+    minHeight: 100,
     border: "1px solid rgba(51, 65, 107, 0.35)",
     background: "rgba(3, 6, 14, 0.92)",
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
-    fontSize: 14,
+    fontSize: "clamp(13px, 3.8vw, 15px)",
     lineHeight: 1.55,
     color: "rgba(226, 232, 240, 0.95)",
     whiteSpace: "pre-wrap",
@@ -366,13 +393,15 @@ const ils = {
   },
   textarea: {
     width: "100%",
-    minHeight: 140,
+    minHeight: 120,
+    maxWidth: "100%",
+    boxSizing: "border-box",
     borderRadius: 12,
     border: "1px solid rgba(51, 65, 107, 0.4)",
     padding: 12,
     outline: "none",
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 600,
     color: "rgba(248, 250, 252, 0.96)",
     background: "rgba(15, 23, 42, 0.55)",
@@ -389,6 +418,9 @@ const ils = {
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 12,
     marginTop: 12,
+  },
+  resultsGridStacked: {
+    gridTemplateColumns: "1fr",
   },
   statCell: {
     borderRadius: 12,
@@ -440,6 +472,14 @@ const ils = {
     paddingBottom: 4,
     scrollbarWidth: "thin",
   },
+  howStepsStacked: {
+    flexDirection: "column",
+    flexWrap: "nowrap",
+    overflowX: "visible",
+    gap: 14,
+    paddingBottom: 0,
+    alignItems: "stretch",
+  },
   howStep: {
     flex: "1 1 0",
     minWidth: 108,
@@ -450,6 +490,21 @@ const ils = {
     textAlign: "center",
     gap: 10,
     padding: "4px 4px 0",
+  },
+  howStepStacked: {
+    flex: "none",
+    minWidth: 0,
+    maxWidth: "none",
+    width: "100%",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    textAlign: "left",
+    gap: 8,
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(51, 65, 107, 0.28)",
+    background: "rgba(15, 23, 42, 0.35)",
+    boxSizing: "border-box",
   },
   howIconRing: {
     width: 52,
@@ -476,6 +531,13 @@ const ils = {
     maxWidth: 168,
     margin: "0 auto",
   },
+  howStepBodyStacked: {
+    maxWidth: "none",
+    margin: 0,
+    fontSize: 12,
+    flex: 1,
+    minWidth: 0,
+  },
   howChev: {
     flexShrink: 0,
     alignSelf: "center",
@@ -486,6 +548,9 @@ const ils = {
     padding: "0 4px",
     marginTop: 10,
     userSelect: "none",
+  },
+  howChevStacked: {
+    display: "none",
   },
   tipBar: {
     borderRadius: 12,
@@ -507,6 +572,9 @@ const ils = {
     boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
     position: "sticky",
     top: 12,
+    minWidth: 0,
+    maxWidth: "100%",
+    boxSizing: "border-box",
   },
   lbHead: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" },
   lbTitle: { fontWeight: 900, fontSize: 13, letterSpacing: "0.14em", color: "rgba(248, 250, 252, 0.95)" },
@@ -552,6 +620,12 @@ const ils = {
     border: "1px solid rgba(51, 65, 107, 0.22)",
     marginTop: 8,
     background: "rgba(15, 23, 42, 0.25)",
+    minWidth: 0,
+  },
+  lbRowMobile: {
+    gridTemplateColumns: "36px 32px minmax(0, 1fr) auto",
+    gap: 6,
+    padding: "10px 6px",
   },
   avatar: {
     width: 36,
@@ -874,7 +948,7 @@ export function InteractiveLabSection({ apiBase }) {
 
   return (
     <div className="portfolio-interactive-root" style={ils.root}>
-      <div style={ils.headerRow}>
+      <div style={{ ...ils.headerRow, ...(stacked ? ils.headerRowStacked : null) }}>
         <div style={ils.titleBlock}>
           <div style={ils.titleLine}>
             <div style={ils.beakerWrap} aria-hidden>
@@ -904,7 +978,7 @@ export function InteractiveLabSection({ apiBase }) {
             </div>
           ) : null}
         </div>
-        <button type="button" style={ils.aboutBtn} onClick={() => setAboutOpen((v) => !v)}>
+        <button type="button" style={{ ...ils.aboutBtn, ...(stacked ? ils.aboutBtnMobile : null) }} onClick={() => setAboutOpen((v) => !v)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" />
             <path d="M12 16v-1M12 8h.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -913,8 +987,13 @@ export function InteractiveLabSection({ apiBase }) {
         </button>
       </div>
 
-      <div style={{ ...ils.mainGrid, ...(stacked ? ils.mainGridStack : null) }}>
-        <div style={ils.leftCol}>
+      <div
+        style={{
+          ...ils.labShellGrid,
+          ...(stacked ? ils.labShellStacked : ils.labShellWide),
+        }}
+      >
+        <div style={{ gridArea: "game", minWidth: 0 }}>
           <div style={ils.gameCard} className="il-game-card">
             <div style={ils.arcGlow} aria-hidden />
             <div style={ils.tabPill}>
@@ -940,7 +1019,7 @@ export function InteractiveLabSection({ apiBase }) {
                 <p style={ils.heroSub}>
                   Get in the <span style={ils.strongHi}>top 5</span> and your name is on the leaderboard.
                 </p>
-                <div style={ils.nameRow}>
+                <div style={{ ...ils.nameRow, ...(stacked ? ils.nameRowStacked : null) }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden style={{ opacity: 0.7 }}>
                     <path
                       d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zM4 20a8 8 0 0 1 16 0"
@@ -957,7 +1036,7 @@ export function InteractiveLabSection({ apiBase }) {
                     autoComplete="nickname"
                   />
                 </div>
-                <button type="button" style={ils.startBtn} className="il-start-btn" onClick={startTest}>
+                <button type="button" style={{ ...ils.startBtn, ...(stacked ? ils.startBtnFull : null) }} className="il-start-btn" onClick={startTest}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
                     <path
                       d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"
@@ -1035,7 +1114,7 @@ export function InteractiveLabSection({ apiBase }) {
             {phase === "results" && results && (
               <div style={ils.resultsCard}>
                 <h3 style={{ ...ils.heroTitle, fontSize: "1.25rem" }}>Your results</h3>
-                <div style={ils.resultsGrid}>
+                <div style={{ ...ils.resultsGrid, ...(stacked ? ils.resultsGridStacked : null) }}>
                   <div style={ils.statCell}>
                     <div style={ils.statLabel}>NET WPM</div>
                     <div style={ils.statVal}>{results.netWpm}</div>
@@ -1061,60 +1140,16 @@ export function InteractiveLabSection({ apiBase }) {
               </div>
             )}
           </div>
-
-          <div style={ils.howCard}>
-            <div style={ils.howTitle}>
-              <HowTitleSparkle />
-              How it works
-            </div>
-            <div style={ils.howSteps} className="il-how-steps">
-              <div style={ils.howStep}>
-                <div style={ils.howIconRing}>
-                  <HowIconUser />
-                </div>
-                <div style={ils.howStepTitle}>Enter your name</div>
-                <div style={ils.howStepBody}>Pick a name to get started</div>
-              </div>
-              <span style={ils.howChev} aria-hidden>
-                ›
-              </span>
-              <div style={ils.howStep}>
-                <div style={ils.howIconRing}>
-                  <HowIconBolt />
-                </div>
-                <div style={ils.howStepTitle}>30-sec test</div>
-                <div style={ils.howStepBody}>Type the given text as fast and accurately as you can</div>
-              </div>
-              <span style={ils.howChev} aria-hidden>
-                ›
-              </span>
-              <div style={ils.howStep}>
-                <div style={ils.howIconRing}>
-                  <HowIconChart />
-                </div>
-                <div style={ils.howStepTitle}>Get your results</div>
-                <div style={ils.howStepBody}>See your WPM, accuracy, and rank</div>
-              </div>
-              <span style={ils.howChev} aria-hidden>
-                ›
-              </span>
-              <div style={ils.howStep}>
-                <div style={ils.howIconRing}>
-                  <HowIconTrophy />
-                </div>
-                <div style={ils.howStepTitle}>Top 5 only</div>
-                <div style={ils.howStepBody}>Only the best five scores are shown</div>
-              </div>
-            </div>
-          </div>
-
-          <div style={ils.tipBar}>
-            <span aria-hidden>💡</span>
-            <span>Tip: Accuracy above 90% gives you the best Net WPM.</span>
-          </div>
         </div>
 
-        <aside style={{ ...ils.lbCard, ...(stacked ? { position: "relative", top: "auto" } : null) }} aria-label="Typing leaderboard">
+        <aside
+          style={{
+            gridArea: "lb",
+            ...ils.lbCard,
+            ...(stacked ? { position: "relative", top: "auto" } : null),
+          }}
+          aria-label="Typing leaderboard"
+        >
           <div style={ils.lbHead}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span aria-hidden>👑</span>
@@ -1142,7 +1177,7 @@ export function InteractiveLabSection({ apiBase }) {
           )}
           {lbStatus === "ok" &&
             lbRows.map((row) => (
-              <div key={row._id || row.rank} style={ils.lbRow}>
+              <div key={row._id || row.rank} style={{ ...ils.lbRow, ...(stacked ? ils.lbRowMobile : null) }}>
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <IlMedal rank={row.rank} />
                 </div>
@@ -1167,6 +1202,62 @@ export function InteractiveLabSection({ apiBase }) {
             </div>
           ) : null}
         </aside>
+
+        <div style={{ gridArea: "how", minWidth: 0 }}>
+          <div style={ils.howCard}>
+            <div style={ils.howTitle}>
+              <HowTitleSparkle />
+              How it works
+            </div>
+            <div style={{ ...ils.howSteps, ...(stacked ? ils.howStepsStacked : null) }} className="il-how-steps">
+              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
+                <div style={ils.howIconRing}>
+                  <HowIconUser />
+                </div>
+                <div style={ils.howStepTitle}>Enter your name</div>
+                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>Pick a name to get started</div>
+              </div>
+              <span style={{ ...ils.howChev, ...(stacked ? ils.howChevStacked : null) }} aria-hidden>
+                ›
+              </span>
+              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
+                <div style={ils.howIconRing}>
+                  <HowIconBolt />
+                </div>
+                <div style={ils.howStepTitle}>30-sec test</div>
+                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>Type the given text as fast and accurately as you can</div>
+              </div>
+              <span style={{ ...ils.howChev, ...(stacked ? ils.howChevStacked : null) }} aria-hidden>
+                ›
+              </span>
+              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
+                <div style={ils.howIconRing}>
+                  <HowIconChart />
+                </div>
+                <div style={ils.howStepTitle}>Get your results</div>
+                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>See your WPM, accuracy, and rank</div>
+              </div>
+              <span style={{ ...ils.howChev, ...(stacked ? ils.howChevStacked : null) }} aria-hidden>
+                ›
+              </span>
+              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
+                <div style={ils.howIconRing}>
+                  <HowIconTrophy />
+                </div>
+                <div style={ils.howStepTitle}>Top 5 only</div>
+                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>Only the best five scores are shown</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ gridArea: "tip", minWidth: 0 }}>
+          <div style={ils.tipBar}>
+            <span aria-hidden>💡</span>
+            <span>Tip: Accuracy above 90% gives you the best Net WPM.</span>
+          </div>
+        </div>
+
       </div>
     </div>
   );

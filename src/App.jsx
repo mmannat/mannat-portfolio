@@ -180,13 +180,14 @@ function PortfolioHome() {
   );
 
   useEffect(() => {
+    const navBias = isMobile ? 96 : 120;
     const onScroll = () => {
       const offsets = sectionIds
         .map((id) => {
           const el = document.getElementById(id);
           if (!el) return { id, top: Infinity };
           const rect = el.getBoundingClientRect();
-          return { id, top: Math.abs(rect.top - 120) };
+          return { id, top: Math.abs(rect.top - navBias) };
         })
         .sort((a, b) => a.top - b.top);
 
@@ -196,7 +197,7 @@ function PortfolioHome() {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
-  }, [sectionIds]);
+  }, [sectionIds, isMobile]);
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
@@ -213,9 +214,19 @@ function PortfolioHome() {
     ...(collapsed ? styles.sidebarCollapsed : {}),
   };
 
+  const shellStyle = {
+    ...styles.shell,
+    ...(isMobile ? styles.shellMobile : {}),
+  };
+
+  const mainStyle = {
+    ...styles.main,
+    ...(isMobile ? styles.mainMobile : {}),
+  };
+
   return (
     <div style={styles.page}>
-      <div style={styles.shell}>
+      <div style={shellStyle}>
         <aside style={sidebarStyle} aria-label="Primary">
           {!isMobile && (
             <button
@@ -298,7 +309,7 @@ function PortfolioHome() {
           </div>
         </aside>
 
-        <div style={styles.main}>
+        <div style={mainStyle}>
           <Section
             id="about"
             title="About"
@@ -863,10 +874,20 @@ function AboutCard({ onJump }) {
   const [stacked, setStacked] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(max-width: 900px)").matches : false
   );
+  const [narrowSkills, setNarrowSkills] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 520px)").matches : false
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 900px)");
     const fn = () => setStacked(mq.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 520px)");
+    const fn = () => setNarrowSkills(mq.matches);
     mq.addEventListener("change", fn);
     return () => mq.removeEventListener("change", fn);
   }, []);
@@ -909,21 +930,23 @@ function AboutCard({ onJump }) {
           <div
             style={{
               ...styles.aboutSkillRow,
-              ...(stacked ? styles.aboutSkillRowStacked : null),
+              ...(stacked && narrowSkills ? styles.aboutSkillRowPhone : null),
+              ...(stacked && !narrowSkills ? styles.aboutSkillRowStacked : null),
             }}
           >
             {ABOUT_SKILL_CARDS.map(({ title, line2, Icon }) => {
-              const iconSize = stacked ? 25 : 28;
+              const denseTiles = stacked && !narrowSkills;
+              const iconSize = denseTiles ? 25 : 28;
               return (
               <div key={title + (line2 || "")} className="about-skill-tile" style={{
                 ...styles.aboutSkillCard,
-                ...(stacked ? styles.aboutSkillCardDense : null),
+                ...(denseTiles ? styles.aboutSkillCardDense : null),
               }}>
                 <div style={styles.aboutSkillCardIcon}>
                   <Icon size={iconSize} />
                 </div>
-                <div style={{ ...styles.aboutSkillCardTitle, ...(stacked ? styles.aboutSkillCardTitleDense : null) }}>{title}</div>
-                {line2 ? <div style={{ ...styles.aboutSkillCardSub, ...(stacked ? styles.aboutSkillCardSubDense : null) }}>{line2}</div> : null}
+                <div style={{ ...styles.aboutSkillCardTitle, ...(denseTiles ? styles.aboutSkillCardTitleDense : null) }}>{title}</div>
+                {line2 ? <div style={{ ...styles.aboutSkillCardSub, ...(denseTiles ? styles.aboutSkillCardSubDense : null) }}>{line2}</div> : null}
               </div>
               );
             })}
@@ -1752,7 +1775,14 @@ function Skills() {
       <div style={styles.skillsParticleR} aria-hidden />
       <div style={styles.skillsGlowTL} aria-hidden />
       <div style={styles.skillsGlowBR} aria-hidden />
-      <div style={styles.skillsShell}>
+      <div
+        style={{
+          ...styles.skillsShell,
+          ...(layout === "mobile"
+            ? { padding: "clamp(14px, 3vw, 20px) clamp(12px, 3.5vw, 18px) clamp(20px, 4vw, 28px)" }
+            : null),
+        }}
+      >
         <div style={styles.skillsPillToolbar}>
           <div style={styles.skillsPill}>
             <span style={styles.skillsPillRocket} aria-hidden>
@@ -1797,7 +1827,7 @@ function Skills() {
         ) : null}
 
         {layout === "mobile" ? (
-          <div style={styles.skillsMobileStack}>
+            <div style={styles.skillsMobileStack}>
             {SKILLS_COLUMNS.map((col) => (
               <div key={col.title} style={styles.skillsMobileBlock}>
                 <div style={styles.skillsMobileRail} aria-hidden>
@@ -1805,7 +1835,7 @@ function Skills() {
                   <div style={styles.skillsMobileRailLine} />
                 </div>
                 <div style={styles.skillsMobileMain}>
-                  <SkillsColumnBody col={col} />
+                  <SkillsColumnBody col={col} subtitleWide />
                 </div>
               </div>
             ))}
@@ -1816,7 +1846,7 @@ function Skills() {
   );
 }
 
-function SkillsColumnBody({ col, omitCategoryIcon }) {
+function SkillsColumnBody({ col, omitCategoryIcon, subtitleWide }) {
   return (
     <div style={styles.skillsColumn}>
       <div style={omitCategoryIcon ? { ...styles.skillsColHead, ...styles.skillsColHeadBelow } : styles.skillsColHead}>
@@ -1827,7 +1857,7 @@ function SkillsColumnBody({ col, omitCategoryIcon }) {
         ) : null}
         <div style={styles.skillsStepPill}>{col.step}</div>
         <h3 style={styles.skillsColTitle}>{col.title}</h3>
-        <p style={styles.skillsColSubtitle}>{col.subtitle}</p>
+        <p style={{ ...styles.skillsColSubtitle, ...(subtitleWide ? styles.skillsColSubtitleMobile : null) }}>{col.subtitle}</p>
       </div>
       <div style={styles.skillsCard}>
         {col.items.map((item) => (
@@ -2173,14 +2203,15 @@ function Projects() {
             const accent = projectBadgeAccent(p.badge);
             const iconClass = projectDeviconClass(p.badge);
             return (
-              <div key={p.name} style={styles.prRow}>
+              <div key={p.name} style={{ ...styles.prRow, ...(layout === "mobile" ? styles.prRowMobile : null) }}>
                 <div style={{ ...styles.prGutter, width: gutterW }}>
                   <div style={styles.prNode} aria-hidden />
                 </div>
-                <a href={p.href} target="_blank" rel="noreferrer" style={styles.prCard} className="pr-project-card">
+                <a href={p.href} target="_blank" rel="noreferrer" style={{ ...styles.prCard, ...(layout === "mobile" ? styles.prCardMobile : null) }} className="pr-project-card">
                   <div
                     style={{
                       ...styles.prIconShell,
+                      ...(layout === "mobile" ? styles.prIconShellMobile : null),
                       boxShadow: `0 0 28px ${accent.glow}, 0 12px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)`,
                     }}
                   >
@@ -2205,7 +2236,7 @@ function Projects() {
                         {p.badge}
                       </div>
                     </div>
-                    <p style={styles.prCardDesc}>{p.desc}</p>
+                    <p style={{ ...styles.prCardDesc, ...(layout === "mobile" ? styles.prCardDescMobile : null) }}>{p.desc}</p>
                     <div style={styles.prCardFooter}>
                       <div style={styles.prTags}>
                         {p.tags.map((t) => (
@@ -2224,7 +2255,7 @@ function Projects() {
         </div>
       </div>
 
-      <div style={styles.prCtaWrap}>
+      <div style={{ ...styles.prCtaWrap, ...(layout === "mobile" ? styles.prCtaWrapMobile : null) }}>
         <a
           href="https://github.com/mmannat?tab=repositories"
           target="_blank"
@@ -2268,10 +2299,21 @@ function Contact() {
   const [status, setStatus] = useState("idle"); // idle | sending | ok | err
   const [errMsg, setErrMsg] = useState("");
   const [wide, setWide] = useState(() => (typeof window !== "undefined" ? window.matchMedia("(min-width: 900px)").matches : true));
+  const [touchUi, setTouchUi] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 640px)").matches : false
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 900px)");
     const onChange = () => setWide(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const onChange = () => setTouchUi(mq.matches);
     onChange();
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
@@ -2349,13 +2391,14 @@ function Contact() {
     boxSizing: "border-box",
     borderRadius: 14,
     border: "1px solid rgba(255, 255, 255, 0.07)",
-    padding: "12px 14px",
+    padding: touchUi ? "14px 14px" : "12px 14px",
     outline: "none",
     fontWeight: 600,
-    fontSize: 14,
+    fontSize: touchUi ? 16 : 14,
     color: "rgba(248, 250, 252, 0.96)",
     background: "rgba(3, 4, 12, 0.72)",
     fontFamily: "inherit",
+    minHeight: touchUi ? 48 : undefined,
   };
 
   return (
@@ -2456,15 +2499,16 @@ function Contact() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: "auto", paddingTop: 10, flexWrap: "nowrap" }}>
+          <div style={{ display: "flex", gap: 10, marginTop: "auto", paddingTop: 10, flexWrap: "wrap" }}>
             <a
               href={SOCIAL_LINKS.github}
               target="_blank"
               rel="noreferrer"
               className="contact-social-pill"
               style={{
-                flex: 1,
-                minWidth: 0,
+                flex: "1 1 calc(50% - 5px)",
+                minWidth: "min(100%, 140px)",
+                minHeight: 46,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -2488,8 +2532,9 @@ function Contact() {
               rel="noreferrer"
               className="contact-social-pill"
               style={{
-                flex: 1,
-                minWidth: 0,
+                flex: "1 1 calc(50% - 5px)",
+                minWidth: "min(100%, 140px)",
+                minHeight: 46,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -2703,14 +2748,25 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif',
     color: "rgba(226, 232, 240, 0.96)",
     width: "100%",
+    maxWidth: "100%",
+    overflowX: "hidden",
+    boxSizing: "border-box",
   },
 
-shell: {
-  width: "100%",
-  margin: 0,
-  display: "flex",
-  alignItems: "stretch",
-},
+  shell: {
+    width: "100%",
+    maxWidth: "100%",
+    margin: 0,
+    display: "flex",
+    alignItems: "stretch",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+  },
+
+  shellMobile: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
 
   sidebar: {
     position: "sticky",
@@ -2744,13 +2800,15 @@ shell: {
   sidebarMobile: {
     position: "relative",
     width: "100%",
-    minWidth: "100%",
+    minWidth: 0,
+    maxWidth: "100%",
     height: "auto",
     minHeight: 0,
     borderRight: "none",
     borderBottom: "1px solid rgba(139, 92, 246, 0.18)",
     boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
-    padding: "14px 14px 16px",
+    padding: "14px clamp(12px, 4vw, 16px) 16px",
+    boxSizing: "border-box",
   },
 
   sidebarCollapseBtn: {
@@ -2848,12 +2906,11 @@ shell: {
   },
 
   navMobile: {
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 8,
-    justifyContent: "flex-start",
     flex: "none",
+    width: "100%",
   },
 
   sideNavItem: {
@@ -2892,12 +2949,13 @@ shell: {
   },
 
   sideNavItemMobile: {
-    width: "auto",
-    flex: "1 1 auto",
-    minWidth: "min(100%, 148px)",
+    width: "100%",
+    minWidth: 0,
+    minHeight: 48,
     justifyContent: "flex-start",
     fontSize: 13,
-    padding: "10px 12px",
+    padding: "12px 12px",
+    boxSizing: "border-box",
   },
 
   sideNavIconWrap: {
@@ -3143,6 +3201,11 @@ shell: {
     gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   },
 
+  aboutSkillRowPhone: {
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 10,
+  },
+
   aboutSkillCard: {
     minWidth: 0,
     width: "100%",
@@ -3344,12 +3407,19 @@ shell: {
     color: "rgba(186, 198, 220, 0.88)",
   },
 
-main: {
-  flex: 1,
-  padding: 22,
-  maxWidth: "none",
-  color: "rgba(226, 232, 240, 0.94)",
-},
+  main: {
+    flex: 1,
+    padding: 22,
+    maxWidth: "none",
+    minWidth: 0,
+    width: "100%",
+    boxSizing: "border-box",
+    color: "rgba(226, 232, 240, 0.94)",
+  },
+
+  mainMobile: {
+    padding: "clamp(10px, 3vw, 14px) clamp(12px, 4vw, 16px) clamp(18px, 5vw, 26px)",
+  },
   topCard: {
     background: "white",
     borderRadius: 22,
@@ -3383,6 +3453,9 @@ main: {
     padding: "clamp(16px, 2.5vw, 22px)",
     boxShadow: "0 18px 48px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.04)",
     border: "1px solid rgba(51, 65, 107, 0.28)",
+    scrollMarginTop: "clamp(72px, 16vw, 112px)",
+    maxWidth: "100%",
+    boxSizing: "border-box",
   },
   sectionTitle: {
     fontSize: 22,
@@ -3394,11 +3467,14 @@ main: {
 
   eduSectionOuter: {
     marginTop: 22,
+    marginBottom: 0,
     padding: 0,
     position: "relative",
     borderRadius: 20,
     overflow: "hidden",
     isolation: "isolate",
+    maxWidth: "100%",
+    boxSizing: "border-box",
     background:
       "linear-gradient(180deg, rgba(10, 12, 22, 0.92) 0%, rgba(6, 8, 18, 0.96) 100%), linear-gradient(158deg, #030308 0%, #0a0f18 44%, #05070c 100%), radial-gradient(72% 48% at 92% 10%, rgba(124, 58, 237, 0.11), transparent 56%), radial-gradient(58% 44% at 8% 88%, rgba(236, 72, 153, 0.05), transparent 54%)",
     border: "1px solid rgba(51, 65, 107, 0.38)",
@@ -4180,6 +4256,7 @@ main: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 14,
+    flexWrap: "wrap",
   },
   portfolioUnifiedHeaderTitles: {
     flex: 1,
@@ -4732,6 +4809,10 @@ main: {
     maxWidth: 220,
   },
 
+  skillsColSubtitleMobile: {
+    maxWidth: "100%",
+  },
+
   skillsCard: {
     borderRadius: 16,
     padding: "10px 10px 12px",
@@ -4922,6 +5003,9 @@ main: {
     gap: 0,
     minHeight: 152,
   },
+  prRowMobile: {
+    minHeight: 0,
+  },
   prGutter: {
     flexShrink: 0,
     position: "relative",
@@ -4958,6 +5042,13 @@ main: {
     boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 32px rgba(0, 0, 0, 0.25)",
     transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
   },
+  prCardMobile: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 12,
+    padding: "14px 14px",
+    minHeight: 0,
+  },
   prIconShell: {
     width: 58,
     height: 58,
@@ -4969,6 +5060,11 @@ main: {
     background: "rgba(15, 23, 42, 0.65)",
     border: "1px solid rgba(59, 130, 246, 0.12)",
     alignSelf: "center",
+  },
+  prIconShellMobile: {
+    width: 52,
+    height: 52,
+    alignSelf: "flex-start",
   },
   prIconDev: {
     fontSize: 30,
@@ -5029,6 +5125,10 @@ main: {
     WebkitBoxOrient: "vertical",
     overflow: "hidden",
   },
+  prCardDescMobile: {
+    WebkitLineClamp: 3,
+    fontSize: 13,
+  },
   prCardFooter: {
     marginTop: "auto",
     paddingTop: 4,
@@ -5065,6 +5165,9 @@ main: {
     justifyContent: "center",
     padding: "22px 16px 8px",
   },
+  prCtaWrapMobile: {
+    padding: "18px 12px 8px",
+  },
   prCtaBtn: {
     display: "inline-flex",
     alignItems: "center",
@@ -5089,6 +5192,7 @@ main: {
     boxShadow: "none",
     padding: 0,
     borderRadius: 0,
+    scrollMarginTop: "clamp(72px, 16vw, 112px)",
   },
   contactStatusOk: {
     padding: "8px 12px",
