@@ -2738,7 +2738,7 @@ function Contact() {
       });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Request failed");
+      if (!res.ok) throw new Error(data?.error || "Could not send. Please try again.");
 
       setStatus("ok");
       setName("");
@@ -2748,7 +2748,12 @@ function Contact() {
       setTimeout(() => setStatus("idle"), 6000);
     } catch (e) {
       setStatus("err");
-      setErrMsg(e.message || "Error");
+      const msg = e?.message || "Error";
+      setErrMsg(
+        msg === "Failed to fetch" || msg === "Load failed" || msg.includes("NetworkError")
+          ? "Could not reach the server. Please try again in a moment."
+          : msg
+      );
     }
   };
 
