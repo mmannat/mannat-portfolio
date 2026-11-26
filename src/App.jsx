@@ -4,6 +4,7 @@ import profileImg from "./assets/profile.jpg";
 import actaxLogo from "./assets/actax-logo.png";
 import { InteractiveLabSection } from "./InteractiveLabSection.jsx";
 import { WallOfFamePage } from "./WallOfFamePage.jsx";
+import { WallAdminPage } from "./WallAdminPage.jsx";
 import { API_BASE } from "./apiBase.js";
 
 const SOCIAL_LINKS = {
@@ -130,14 +131,52 @@ function IconMail({ size = 18 }) {
   );
 }
 
+/** Cursor/Simple Browser often percent-encodes hash slashes (#%2Fwall%2Fadmin). */
+function HashPathFix() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const raw = window.location.hash.slice(1);
+    if (!raw || !/%2f/i.test(raw)) return;
+    try {
+      const decoded = decodeURIComponent(raw);
+      if (decoded !== raw && decoded.startsWith("/")) {
+        navigate(decoded, { replace: true });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    if (!/%2f/i.test(location.pathname)) return;
+    try {
+      const decoded = decodeURIComponent(location.pathname);
+      if (decoded !== location.pathname && decoded.startsWith("/")) {
+        navigate(`${decoded}${location.search}${location.hash}`, { replace: true });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [location.pathname, location.search, location.hash, navigate]);
+
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<PortfolioHome />} />
-      <Route path="/wall" element={<WallOfFamePage />} />
-      <Route path="/projects/qa-test-lab" element={<QATestLabPage />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+      <HashPathFix />
+      <Routes>
+        <Route path="/" element={<PortfolioHome />} />
+        <Route path="/wall" element={<WallOfFamePage />} />
+        <Route path="/wall/admin" element={<WallAdminPage />} />
+        <Route path="/wall-admin" element={<WallAdminPage />} />
+        <Route path="/projects/qa-test-lab" element={<QATestLabPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
 

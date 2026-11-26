@@ -208,23 +208,6 @@ export function WallOfFamePage({ apiBase = API_BASE }) {
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [active, setActive] = useState(null);
   const [scrollP, setScrollP] = useState(0);
-  const [adminToken] = useState(() => {
-    try {
-      const fromSearch = new URLSearchParams(window.location.search).get("admin");
-      const hash = window.location.hash || "";
-      const qIdx = hash.indexOf("?");
-      const fromHash = qIdx >= 0 ? new URLSearchParams(hash.slice(qIdx + 1)).get("admin") : null;
-      const t = fromSearch || fromHash;
-      if (t) {
-        localStorage.setItem("mannat_gb_admin", t);
-        return t;
-      }
-      return localStorage.getItem("mannat_gb_admin") || "";
-    } catch {
-      return "";
-    }
-  });
-  const [pending, setPending] = useState([]);
   const galleryRef = useRef(null);
 
   const base = useMemo(() => String(apiBase || "").replace(/\/$/, ""), [apiBase]);
@@ -290,55 +273,6 @@ export function WallOfFamePage({ apiBase = API_BASE }) {
   useEffect(() => {
     load();
   }, [load]);
-
-  const loadPending = useCallback(async () => {
-    if (!adminToken) return;
-    try {
-      const res = await fetch(`${base}/api/guestbook/pending`, {
-        headers: { "x-admin-token": adminToken },
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return;
-      setPending(Array.isArray(data.entries) ? data.entries : []);
-    } catch {
-      /* ignore */
-    }
-  }, [adminToken, base]);
-
-  useEffect(() => {
-    loadPending();
-  }, [loadPending]);
-
-  async function approveEntry(id) {
-    if (!adminToken || !id) return;
-    try {
-      const res = await fetch(`${base}/api/guestbook/${id}/approve`, {
-        method: "POST",
-        headers: { "x-admin-token": adminToken },
-      });
-      if (!res.ok) return;
-      setPending((list) => list.filter((e) => e._id !== id));
-      await load();
-    } catch {
-      /* ignore */
-    }
-  }
-
-  async function deleteEntry(id) {
-    if (!adminToken || !id) return;
-    try {
-      const res = await fetch(`${base}/api/guestbook/${id}`, {
-        method: "DELETE",
-        headers: { "x-admin-token": adminToken },
-      });
-      if (!res.ok) return;
-      setPending((list) => list.filter((e) => e._id !== id));
-      setEntries((list) => list.filter((e) => e._id !== id));
-      if (active?._id === id) setActive(null);
-    } catch {
-      /* ignore */
-    }
-  }
 
   // Visit counter: once per browser session; skip localhost; never crash if storage is blocked.
   useEffect(() => {
@@ -482,38 +416,6 @@ export function WallOfFamePage({ apiBase = API_BASE }) {
           </div>
         </div>
 
-        {adminToken ? (
-          <div className="wall-moderation" aria-label="Moderation">
-            <div className="wall-moderation-head">
-              <strong>Pending review</strong>
-              <span>{pending.length}</span>
-            </div>
-            {pending.length === 0 ? (
-              <p className="wall-moderation-empty">No pending marks.</p>
-            ) : (
-              <ul className="wall-moderation-list">
-                {pending.map((e) => (
-                  <li key={e._id} className="wall-moderation-item">
-                    <img src={e.drawing} alt="" className="wall-moderation-thumb" />
-                    <div className="wall-moderation-meta">
-                      <span className="wall-moderation-name">{e.name}</span>
-                      {e.message ? <span className="wall-moderation-msg">{e.message}</span> : null}
-                    </div>
-                    <div className="wall-moderation-actions">
-                      <button type="button" onClick={() => approveEntry(e._id)}>
-                        Approve
-                      </button>
-                      <button type="button" className="wall-moderation-danger" onClick={() => deleteEntry(e._id)}>
-                        Delete
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : null}
-
         {status === "loading" && <div className="wall-note">Loading the wall…</div>}
 
         {status === "err" && (
@@ -597,13 +499,6 @@ export function WallOfFamePage({ apiBase = API_BASE }) {
                 <span className="wall-card-time">{timeAgo(active.createdAt)}</span>
               </div>
               {active.message ? <p className="wall-modal-msg">{active.message}</p> : null}
-              {adminToken ? (
-                <div className="wall-moderation-actions" style={{ marginTop: 14 }}>
-                  <button type="button" className="wall-moderation-danger" onClick={() => deleteEntry(active._id)}>
-                    Delete
-                  </button>
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
