@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Website Gallery — Mannat</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+        color: rgba(226, 232, 240, 0.96);
+        background:
+          linear-gradient(180deg, #05060f 0%, #080a14 38%, #0b0f1a 100%),
+          radial-gradient(90% 55% at 15% 20%, rgba(88, 28, 135, 0.14), transparent 52%),
+          radial-gradient(70% 50% at 85% 75%, rgba(236, 72, 153, 0.08), transparent 48%);
+        background-attachment: fixed;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .back-btn {
+        position: fixed;
+        top: clamp(16px, 3vw, 28px);
+        left: clamp(16px, 4vw, 32px);
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 700;
+        color: rgba(233, 213, 255, 0.98);
+        text-decoration: none;
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(99, 102, 241, 0.22));
+        border: 1px solid rgba(167, 139, 250, 0.4);
+        box-shadow: 0 0 14px rgba(124, 58, 237, 0.15);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+      .back-btn:hover {
+        transform: translateY(-1px);
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.42), rgba(99, 102, 241, 0.32));
+        box-shadow: 0 6px 18px rgba(91, 33, 182, 0.35), 0 0 18px rgba(167, 139, 250, 0.22);
+      }
+
+      /* Hero */
+      .hero {
+        position: relative;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 20px 40px;
+      }
+      .hero-inner {
+        max-width: 760px;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+      }
+      .hero-eyebrow {
+        font-size: clamp(13px, 2.2vw, 16px);
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(196, 181, 253, 0.9);
+      }
+      .hero h1 {
+        margin-top: 14px;
+        font-size: clamp(44px, 10vw, 104px);
+        font-weight: 900;
+        line-height: 1.02;
+        letter-spacing: -0.02em;
+        background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 42%, #818cf8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+      }
+      .hero p {
+        margin: 18px auto 0;
+        max-width: 560px;
+        font-size: clamp(15px, 2.6vw, 20px);
+        line-height: 1.6;
+        color: rgba(203, 213, 225, 0.92);
+      }
+      .scroll-ind {
+        position: absolute;
+        bottom: clamp(22px, 5vh, 46px);
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: rgba(196, 181, 253, 0.7);
+        transition: opacity 0.2s ease-out;
+      }
+      .scroll-ind span {
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .scroll-ind .chev {
+        display: flex;
+        animation: bounce 1.8s ease-in-out infinite;
+      }
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(7px); }
+      }
+
+      /* Gallery grid */
+      .gallery {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: clamp(20px, 5vw, 48px) clamp(16px, 4vw, 32px) 72px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 22px;
+      }
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 18px 18px 22px;
+        border-radius: 20px;
+        text-decoration: none;
+        color: inherit;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(167, 139, 250, 0.18);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 32px rgba(0, 0, 0, 0.26);
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(167, 139, 250, 0.42);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 22px 46px rgba(0, 0, 0, 0.38), 0 0 28px rgba(139, 92, 246, 0.2);
+      }
+      .card-img {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+      .card:nth-child(1) .card-img { background: linear-gradient(135deg, rgba(45, 212, 191, 0.5), rgba(99, 102, 241, 0.42)); }
+      .card:nth-child(2) .card-img { background: linear-gradient(135deg, rgba(167, 139, 250, 0.52), rgba(217, 70, 239, 0.4)); }
+      .card-name {
+        font-size: 20px;
+        font-weight: 800;
+        color: #f8fafc;
+        letter-spacing: -0.01em;
+      }
+      .card-desc {
+        font-size: 13.5px;
+        line-height: 1.55;
+        color: rgba(186, 198, 220, 0.88);
+      }
+      .visit-btn {
+        margin-top: auto;
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(233, 213, 255, 0.98);
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(99, 102, 241, 0.22));
+        border: 1px solid rgba(167, 139, 250, 0.4);
+        box-shadow: 0 0 14px rgba(124, 58, 237, 0.14);
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+      }
+      .card:hover .visit-btn {
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.46), rgba(99, 102, 241, 0.34));
+        box-shadow: 0 6px 18px rgba(91, 33, 182, 0.32), 0 0 18px rgba(167, 139, 250, 0.22);
+      }
+      footer {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px clamp(16px, 4vw, 32px) 40px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        text-align: center;
+        font-size: 12px;
+        color: rgba(148, 163, 184, 0.7);
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-btn" href="./?section=projects">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      Back to Projects
+    </a>
+
+    <section class="hero">
+      <div class="hero-inner" id="heroInner">
+        <h1>The Website Gallery</h1>
+        <p>Websites I&apos;ve designed and built. Feel free to explore.</p>
+      </div>
+      <div class="scroll-ind" id="scrollInd" aria-hidden="true">
+        <span>Scroll down</span>
+        <span class="chev">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+      </div>
+    </section>
+
+    <div class="gallery">
+      <div class="grid">
+        <a class="card" href="https://actax.com" target="_blank" rel="noreferrer">
+          <div class="card-img" aria-label="ACTax website preview">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <circle cx="8.5" cy="9.5" r="1.8" />
+              <path d="M21 16l-5-5L5 20" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="card-name">ACTax</div>
+          <div class="card-desc">Tax and accounting services website.</div>
+          <span class="visit-btn">
+            Visit Site
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M14 4h6v6M20 4l-9 9M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </a>
+
+        <a class="card" href="https://www.actaxinsurance.com" target="_blank" rel="noreferrer">
+          <div class="card-img" aria-label="ACTax Insurance website preview">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <circle cx="8.5" cy="9.5" r="1.8" />
+              <path d="M21 16l-5-5L5 20" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="card-name">ACTax Insurance</div>
+          <div class="card-desc">Insurance services and quotes website.</div>
+          <span class="visit-btn">
+            Visit Site
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M14 4h6v6M20 4l-9 9M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <footer>© <span id="yr"></span> Mannat. All rights reserved.</footer>
+
+    <script>
+      document.getElementById("yr").textContent = new Date().getFullYear();
+      var heroInner = document.getElementById("heroInner");
+      var scrollInd = document.getElementById("scrollInd");
+      function onScroll() {
+        var p = Math.min(1, window.scrollY / 150);
+        var fade = 1 - Math.min(1, p * 1.1);
+        heroInner.style.opacity = fade;
+        heroInner.style.transform = "translateY(" + (-p * 70) + "px)";
+        scrollInd.style.opacity = fade;
+      }
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    </script>
+  </body>
+</html>
