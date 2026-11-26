@@ -187,8 +187,8 @@ export default function App() {
 const NAV_ITEMS = [
   { id: "about", label: "About", Icon: IconNavAbout },
   { id: "education", label: "Education", Icon: IconNavEducation },
-  { id: "experience", label: "Experience", Icon: IconNavExperience },
   { id: "skills", label: "Skills", Icon: IconNavSkills },
+  { id: "experience", label: "Experience", Icon: IconNavExperience },
   { id: "projects", label: "Projects", Icon: IconNavProjects },
   { id: "resume", label: "Resume", Icon: IconNavResume },
   { id: "interactive-lab", label: "LEAVE YOUR MARK", Icon: IconNavLab },
@@ -217,7 +217,7 @@ function PortfolioHome() {
   }, [isMobile]);
 
   const sectionIds = useMemo(
-    () => ["about", "education", "experience", "skills", "projects", "resume", "interactive-lab", "contact"],
+    () => ["about", "education", "skills", "experience", "projects", "resume", "interactive-lab", "contact"],
     []
   );
 
@@ -315,20 +315,6 @@ function PortfolioHome() {
           </Section>
 
           <Section
-            id="experience"
-            title="Experience"
-            hideTitle
-            cardStyle={styles.eduSectionOuter}
-            className="portfolio-experience-flush"
-            unifiedHeader={{
-              title: "Experience",
-              icon: <IconNavExperience />,
-            }}
-          >
-            <ExperienceCard />
-          </Section>
-
-          <Section
             id="skills"
             title="Skills"
             hideTitle
@@ -340,6 +326,20 @@ function PortfolioHome() {
             }}
           >
             <Skills />
+          </Section>
+
+          <Section
+            id="experience"
+            title="Experience"
+            hideTitle
+            cardStyle={styles.eduSectionOuter}
+            className="portfolio-experience-flush"
+            unifiedHeader={{
+              title: "Experience",
+              icon: <IconNavExperience />,
+            }}
+          >
+            <ExperienceCard />
           </Section>
 
           <Section
@@ -1438,6 +1438,24 @@ function EducationCard() {
           </li>
         ))}
       </ul>
+      <a
+        href="https://drive.google.com/file/d/1bQsq0Xz_gtXi4fqQfqnSBmSz_H0AG8YN/view"
+        target="_blank"
+        rel="noreferrer"
+        className="edu-degree-cta"
+        style={styles.eduDegreeBtn}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden style={{ flexShrink: 0 }}>
+          <path
+            d="M8 4h6l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+            stroke="currentColor"
+            strokeWidth="1.55"
+            strokeLinejoin="round"
+          />
+          <path d="M14 4v4h4M9 12h6M9 15.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+        View Degree →
+      </a>
     </div>
   );
 
@@ -4595,6 +4613,28 @@ const styles = {
     lineHeight: 1.55,
     fontWeight: 500,
     color: "rgba(203, 213, 225, 0.9)",
+  },
+
+  eduDegreeBtn: {
+    alignSelf: "flex-start",
+    marginTop: 6,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 16px",
+    borderRadius: 999,
+    fontFamily: "inherit",
+    fontWeight: 750,
+    fontSize: 13,
+    color: "#fff",
+    textDecoration: "none",
+    cursor: "pointer",
+    border: "none",
+    background: "linear-gradient(135deg, #d946ef, #9333ea, #6366f1)",
+    backgroundSize: "140% 140%",
+    boxShadow:
+      "0 10px 24px rgba(91, 33, 182, 0.32), 0 0 14px rgba(217, 70, 239, 0.12), inset 0 1px 0 rgba(255,255,255,0.12)",
+    transition: "transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease",
   },
 
   eduBannerBullet: {

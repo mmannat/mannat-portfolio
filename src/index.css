@@ -269,6 +269,20 @@ a.sidebar-social-a:focus-visible {
 }
 
 /* Education banner — focus tile hover */
+.portfolio-edu-banner-root a.edu-degree-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 12px 28px rgba(91, 33, 182, 0.4),
+    0 0 18px rgba(217, 70, 239, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+.portfolio-edu-banner-root a.edu-degree-cta:focus-visible {
+  outline: 2px solid rgba(232, 121, 249, 0.75);
+  outline-offset: 3px;
+}
+
 .portfolio-edu-banner-root .edu-banner-focus-tile:hover {
   border-color: rgba(196, 181, 253, 0.32) !important;
   box-shadow:
