@@ -1501,6 +1501,19 @@ a.sidebar-social-a:focus-visible {
   gap: 8px;
   margin-top: auto;
 }
+.wall-admin-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.wall-admin-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.4;
+  border-radius: 12px;
+  font: inherit;
+}
 @media (max-width: 560px) {
   .wall-admin-refresh {
     margin-left: 0;

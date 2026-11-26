@@ -904,18 +904,21 @@ function PenMark() {
 }
 export function InteractiveLabSection({ apiBase = API_BASE }) {
   // ---- form state ----
-  const [name, setName] = useState(() => {
-    try {
-      return localStorage.getItem("mannat_player_name") || "";
-    } catch {
-      return "";
-    }
-  });
+  const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formErr, setFormErr] = useState("");
   const [formOk, setFormOk] = useState("");
+
+  // Drop legacy remembered name so the field stays empty for new visitors.
+  useEffect(() => {
+    try {
+      localStorage.removeItem("mannat_player_name");
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   // ---- tool state ----
   const [tool, setTool] = useState("brush");
@@ -1684,11 +1687,6 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
     }
     setSubmitting(true);
     try {
-      localStorage.setItem("mannat_player_name", nm);
-    } catch {
-      /* ignore */
-    }
-    try {
       const res = await fetch(`${apiBase}/api/guestbook`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1699,6 +1697,7 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
       // Entries start pending — refresh thumbs from approved-only list.
       await fetchEntries();
       clearCanvas();
+      setName("");
       setMessage("");
       setFormOk("Thanks! Your mark was submitted for review. 🎉");
       setTimeout(() => setFormOk(""), 4500);
@@ -1910,7 +1909,15 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
                   {name.length}/{NAME_MAX}
                 </span>
               </div>
-              <input style={gs.input} value={name} maxLength={NAME_MAX} placeholder="e.g. Alex" onChange={(e) => setName(e.target.value)} autoComplete="nickname" />
+              <input
+                style={gs.input}
+                value={name}
+                maxLength={NAME_MAX}
+                placeholder="e.g. Alex"
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="off"
+                name="guestbook-display-name"
+              />
             </div>
             <div style={gs.field}>
               <div style={gs.fieldLabel}>
