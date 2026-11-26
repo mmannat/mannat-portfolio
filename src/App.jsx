@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import profileImg from "./assets/profile.jpg";
+import actaxLogo from "./assets/actax-logo.png";
 import { InteractiveLabSection } from "./InteractiveLabSection.jsx";
-
-/** Set VITE_API_BASE in .env for deployed sites (must be https if the site is https). */
-const API_BASE = String(import.meta.env.VITE_API_BASE || "http://localhost:3001").replace(/\/$/, "");
+import { WallOfFamePage } from "./WallOfFamePage.jsx";
+import { API_BASE } from "./apiBase.js";
 
 const SOCIAL_LINKS = {
   github: "https://github.com/mmannat",
@@ -134,6 +134,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<PortfolioHome />} />
+      <Route path="/wall" element={<WallOfFamePage />} />
       <Route path="/projects/qa-test-lab" element={<QATestLabPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -151,13 +152,15 @@ const NAV_ITEMS = [
   { id: "skills", label: "Skills", Icon: IconNavSkills },
   { id: "projects", label: "Projects", Icon: IconNavProjects },
   { id: "resume", label: "Resume", Icon: IconNavResume },
-  { id: "interactive-lab", label: "INTERACTIVE LAB", Icon: IconNavLab },
+  { id: "interactive-lab", label: "LEAVE YOUR MARK", Icon: IconNavLab },
   { id: "contact", label: "Contact", Icon: IconNavContact },
 ];
 
 function PortfolioHome() {
+  const location = useLocation();
   const [active, setActive] = useState("about");
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [scrollP, setScrollP] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia("(max-width: 900px)").matches
@@ -171,7 +174,7 @@ function PortfolioHome() {
   }, []);
 
   useEffect(() => {
-    if (isMobile) setNavCollapsed(false);
+    if (!isMobile) setMenuOpen(false);
   }, [isMobile]);
 
   const sectionIds = useMemo(
@@ -192,6 +195,7 @@ function PortfolioHome() {
         .sort((a, b) => a.top - b.top);
 
       if (offsets[0]?.id) setActive(offsets[0].id);
+      setScrollP(Math.min(1, window.scrollY / 150));
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -204,112 +208,45 @@ function PortfolioHome() {
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
     setActive(id);
+    setMenuOpen(false);
   };
 
-  const collapsed = !isMobile && navCollapsed;
-
-  const sidebarStyle = {
-    ...styles.sidebar,
-    ...(isMobile ? styles.sidebarMobile : {}),
-    ...(collapsed ? styles.sidebarCollapsed : {}),
-  };
-
-  const shellStyle = {
-    ...styles.shell,
-    ...(isMobile ? styles.shellMobile : {}),
-  };
+  useEffect(() => {
+    // HashRouter keeps query strings on the location object (e.g. #/?section=interactive-lab)
+    const target = new URLSearchParams(location.search).get("section");
+    if (!target) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(target);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        setActive(target);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [location.search]);
 
   const mainStyle = {
     ...styles.main,
     ...(isMobile ? styles.mainMobile : {}),
+    paddingTop: isMobile ? 78 : 104,
+    maxWidth: 1240,
+    margin: "0 auto",
   };
 
   return (
     <div style={styles.page}>
-      <div style={shellStyle}>
-        <aside style={sidebarStyle} aria-label="Primary">
-          {!isMobile && (
-            <button
-              type="button"
-              className="sidebar-collapse-btn"
-              onClick={() => setNavCollapsed((c) => !c)}
-              style={styles.sidebarCollapseBtn}
-              aria-expanded={!navCollapsed}
-              aria-label={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                {navCollapsed ? (
-                  <path d="M13 17l5-5-5-5M6 17l5-5-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                ) : (
-                  <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                )}
-              </svg>
-            </button>
-          )}
+      <TopBar
+        active={active}
+        onNav={scrollTo}
+        scrollP={scrollP}
+        isMobile={isMobile}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+      />
 
-          <div style={{ ...styles.profileWrap, ...(collapsed ? styles.profileWrapCollapsed : {}) }}>
-            <div style={{ ...styles.avatarOuter, ...(collapsed ? styles.avatarOuterCollapsed : {}) }}>
-              <img src={profileImg} alt="Mannat" style={styles.avatar} />
-            </div>
-            {!collapsed && (
-              <>
-                <div style={styles.name}>MANNAT</div>
-                <div style={styles.tagline}>Developer</div>
-              </>
-            )}
-            {collapsed && <div style={styles.nameInitial} aria-hidden>M</div>}
-          </div>
+      <div style={mainStyle}>
+          <Hero scrollP={scrollP} />
 
-          <nav style={isMobile ? styles.navMobile : styles.nav} aria-label="Page sections">
-            {NAV_ITEMS.map(({ id, label, Icon }) => (
-              <SideNavItem
-                key={id}
-                label={label}
-                Icon={Icon}
-                active={active === id}
-                collapsed={collapsed}
-                isMobile={isMobile}
-                onClick={() => scrollTo(id)}
-              />
-            ))}
-          </nav>
-
-          <div style={{ ...styles.sidebarFooter, ...(collapsed ? styles.sidebarFooterCollapsed : {}) }}>
-            {!collapsed && <div style={styles.sidebarFooterLine}>Let&apos;s build something great.</div>}
-            <div style={styles.socialRow}>
-              <a
-                href={SOCIAL_LINKS.github}
-                target="_blank"
-                rel="noreferrer"
-                className="sidebar-social-a"
-                style={styles.socialIconBtn}
-                aria-label="GitHub profile"
-              >
-                <IconGitHub />
-              </a>
-              <a
-                href={SOCIAL_LINKS.linkedin}
-                target="_blank"
-                rel="noreferrer"
-                className="sidebar-social-a"
-                style={styles.socialIconBtn}
-                aria-label="LinkedIn profile"
-              >
-                <IconLinkedIn />
-              </a>
-              <a href={SOCIAL_LINKS.email} className="sidebar-social-a" style={styles.socialIconBtn} aria-label="Email">
-                <IconMail />
-              </a>
-            </div>
-            {!collapsed && (
-              <div style={styles.sidebarCopyright}>
-                © {new Date().getFullYear()} Mannat. All rights reserved.
-              </div>
-            )}
-          </div>
-        </aside>
-
-        <div style={mainStyle}>
           <Section
             id="about"
             title="About"
@@ -396,7 +333,7 @@ function PortfolioHome() {
 
           <Section
             id="interactive-lab"
-            title="INTERACTIVE LAB"
+            title="LEAVE YOUR MARK"
             hideTitle
             cardStyle={styles.eduSectionOuter}
             className="portfolio-interactive-flush"
@@ -408,7 +345,8 @@ function PortfolioHome() {
             <Contact />
           </Section>
         </div>
-      </div>
+
+      <HomeFooter />
     </div>
   );
 }
@@ -680,6 +618,221 @@ function SideNavItem({ label, Icon, active, onClick, collapsed, isMobile }) {
   );
 }
 
+function TopNavItem({ label, Icon, active, onClick, mobile }) {
+  return (
+    <button
+      type="button"
+      className="topnav-btn"
+      onClick={onClick}
+      aria-current={active ? "true" : undefined}
+      style={{
+        ...styles.topNavItem,
+        ...(mobile ? styles.topNavItemMobile : null),
+        ...(active ? styles.topNavItemActive : null),
+      }}
+    >
+      <span style={styles.topNavIcon}>
+        <Icon />
+      </span>
+      <span style={styles.topNavLabel}>{label}</span>
+    </button>
+  );
+}
+
+function TopBarSocials() {
+  return (
+    <>
+      <a href={SOCIAL_LINKS.github} target="_blank" rel="noreferrer" className="sidebar-social-a" style={styles.socialIconBtn} aria-label="GitHub profile">
+        <IconGitHub />
+      </a>
+      <a href={SOCIAL_LINKS.linkedin} target="_blank" rel="noreferrer" className="sidebar-social-a" style={styles.socialIconBtn} aria-label="LinkedIn profile">
+        <IconLinkedIn />
+      </a>
+      <a href={SOCIAL_LINKS.email} className="sidebar-social-a" style={styles.socialIconBtn} aria-label="Email">
+        <IconMail />
+      </a>
+    </>
+  );
+}
+
+function TopBar({ active, onNav, scrollP, isMobile, menuOpen, setMenuOpen }) {
+  const p = scrollP;
+
+  if (isMobile) {
+    return (
+      <header style={styles.topBarMobile} className="portfolio-topbar">
+        <div style={styles.topBarRowMobile}>
+          <div style={styles.topBarBrand}>
+            <div style={styles.topBarAvatarSm}>
+              <img src={profileImg} alt="Mannat" style={styles.avatar} />
+            </div>
+            <div style={styles.topBarNameWrap}>
+              <div style={styles.topBarName}>MANNAT</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="topbar-burger"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            style={styles.topBarBurger}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              {menuOpen ? (
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              ) : (
+                <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
+              )}
+            </svg>
+          </button>
+        </div>
+        {menuOpen && (
+          <div style={styles.topMenuPanel}>
+            <div style={styles.topMenuGrid}>
+              {NAV_ITEMS.map(({ id, label, Icon }) => (
+                <TopNavItem key={id} label={label} Icon={Icon} active={active === id} mobile onClick={() => onNav(id)} />
+              ))}
+            </div>
+            <div style={styles.topMenuSocials}>
+              <TopBarSocials />
+            </div>
+          </div>
+        )}
+      </header>
+    );
+  }
+
+  const barBg = `rgba(7, 6, 13, ${(0.25 + p * 0.62).toFixed(3)})`;
+  return (
+    <header
+      style={{
+        ...styles.topBar,
+        background: barBg,
+        backdropFilter: p > 0.03 ? "blur(14px)" : "none",
+        WebkitBackdropFilter: p > 0.03 ? "blur(14px)" : "none",
+        borderBottom: `1px solid rgba(139, 92, 246, ${(p * 0.18).toFixed(3)})`,
+        boxShadow: p > 0.05 ? "0 12px 34px rgba(0,0,0,0.4)" : "none",
+      }}
+      className="portfolio-topbar"
+    >
+      <div style={{ ...styles.topBarBrand, transform: `translateX(${(1 - p) * 12}px)` }}>
+        <div style={styles.topBarAvatarOuter}>
+          <img src={profileImg} alt="Mannat" style={styles.avatar} />
+        </div>
+        <div style={styles.topBarNameWrap}>
+          <div style={styles.topBarName}>MANNAT</div>
+        </div>
+      </div>
+      <nav style={styles.topNavRow} aria-label="Page sections">
+        {NAV_ITEMS.map(({ id, label, Icon }) => (
+          <TopNavItem key={id} label={label} Icon={Icon} active={active === id} onClick={() => onNav(id)} />
+        ))}
+      </nav>
+    </header>
+  );
+}
+
+function Hero({ scrollP }) {
+  const fade = 1 - Math.min(1, scrollP * 1.1);
+  return (
+    <section style={styles.hero} aria-label="Intro">
+      <div style={{ ...styles.heroInner, opacity: fade, transform: `translateY(${-scrollP * 70}px)` }}>
+        <div style={styles.heroGreeting}>Hi, I&apos;m</div>
+        <h1 style={styles.heroName}>Mannat</h1>
+        <p style={styles.heroRole}>
+          I&apos;m a <span style={styles.heroRoleAccent}>Creator of Digital Solutions</span>
+        </p>
+      </div>
+      <div style={{ ...styles.heroScroll, opacity: fade }} aria-hidden>
+        <span style={styles.heroScrollText}>Scroll down</span>
+        <span className="hero-scroll-chevron" style={styles.heroScrollChevron}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function HomeFooter() {
+  const [totalVisits, setTotalVisits] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let local = false;
+      try {
+        const h = window.location.hostname;
+        local = h === "localhost" || h === "127.0.0.1" || h === "[::1]";
+      } catch {
+        local = false;
+      }
+
+      let counted = false;
+      try {
+        counted = sessionStorage.getItem("mannat_visit_counted") === "1";
+      } catch {
+        counted = false;
+      }
+
+      let vid = "";
+      try {
+        vid = localStorage.getItem("mannat_visitor_id") || "";
+        if (!vid) {
+          vid =
+            (typeof crypto !== "undefined" && crypto.randomUUID && crypto.randomUUID()) ||
+            `v_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+          localStorage.setItem("mannat_visitor_id", vid);
+        }
+      } catch {
+        vid = `v_${Date.now().toString(36)}`;
+      }
+
+      try {
+        const shouldPost = !local && !counted;
+        const res = await fetch(`${API_BASE}/api/visits`, {
+          method: shouldPost ? "POST" : "GET",
+          headers: shouldPost ? { "Content-Type": "application/json" } : undefined,
+          body: shouldPost ? JSON.stringify({ visitorId: vid }) : undefined,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok) {
+          setTotalVisits(typeof data.totalVisits === "number" ? data.totalVisits : 0);
+          if (shouldPost) {
+            try {
+              sessionStorage.setItem("mannat_visit_counted", "1");
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      } catch {
+        /* best-effort */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <footer style={styles.homeFooter}>
+      <div style={styles.homeFooterTagline}>Let&apos;s build something great.</div>
+      <div style={styles.homeFooterSocials}>
+        <TopBarSocials />
+      </div>
+      <div style={styles.homeFooterCopyright}>© {new Date().getFullYear()} Mannat. All rights reserved.</div>
+      {totalVisits != null ? (
+        <div style={styles.homeFooterVisits} aria-label="Site visit count">
+          Visited {Number(totalVisits).toLocaleString()} times
+        </div>
+      ) : null}
+    </footer>
+  );
+}
+
 function TopTab({ label, active, onClick }) {
   return (
     <button onClick={onClick} style={{ ...styles.topTab, ...(active ? styles.topTabActive : null) }}>
@@ -718,13 +871,46 @@ function PortfolioUnifiedSectionHeader({ title, icon, titleSuffix }) {
 }
 
 function Section({ id, title, children, hideTitle, cardStyle, className, unifiedHeader }) {
+  const ref = useRef(null);
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setRevealed(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setRevealed(true);
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
     <div
       id={id}
+      ref={ref}
       role="region"
       aria-label={hideTitle && title ? title : undefined}
       className={className}
-      style={{ ...styles.sectionCard, ...(cardStyle || {}) }}
+      style={{
+        ...styles.sectionCard,
+        ...(cardStyle || {}),
+        opacity: revealed ? 1 : 0,
+        transform: revealed ? "translateY(0)" : "translateY(42px)",
+        transition: "opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
+        willChange: "opacity, transform",
+      }}
     >
       {unifiedHeader ? (
         <PortfolioUnifiedSectionHeader
@@ -841,7 +1027,7 @@ function AboutTimelineIconImpact() {
 }
 
 const ABOUT_SKILL_CARDS = [
-  { title: "Full Stack Dev", line2: "", Icon: AboutSkillIconCode },
+  { title: "Solution Creator", line2: "", Icon: AboutSkillIconCode },
   { title: "UI / UX Enthusiast", line2: "", Icon: AboutSkillIconGauge },
   { title: "Problem Solver", line2: "", Icon: AboutSkillIconBulb },
   { title: "Always Learning", line2: "", Icon: AboutSkillIconRocket },
@@ -923,8 +1109,8 @@ function AboutCard({ onJump }) {
           </h2>
 
           <p style={styles.aboutHeroLead}>
-            My journey in tech started with curiosity and turned into a passion for building. I love solving
-            problems, designing beautiful interfaces, and writing clean code that brings ideas to life.
+            Product-minded Computer Science graduate who turns business problems into automation, websites, and
+            marketing designs. Experienced across tax, insurance, and e-commerce.
           </p>
 
           <div
@@ -955,26 +1141,14 @@ function AboutCard({ onJump }) {
 
         <div style={styles.aboutHeroColRight}>
           <div style={styles.aboutHeroRightStack}>
-            <div style={styles.aboutTimeline}>
-              <div style={styles.aboutTimelineLine} aria-hidden />
-              {ABOUT_TIMELINE.map(({ title, body, Icon }, i) => (
-                <div
-                  key={title}
-                  style={{
-                    ...styles.aboutTimelineRow,
-                    ...(i === ABOUT_TIMELINE.length - 1 ? styles.aboutTimelineRowLast : null),
-                  }}
-                >
-                  <div style={styles.aboutTimelineDotCol}>
-                    <div style={styles.aboutTimelineDot} />
-                  </div>
-                  <div style={styles.aboutTimelineIconRing}>
+            <div style={styles.aboutCardsGrid}>
+              {ABOUT_TIMELINE.map(({ title, body, Icon }) => (
+                <div key={title} className="about-journey-card" style={styles.aboutJourneyCard}>
+                  <div style={styles.aboutJourneyIconRing}>
                     <Icon />
                   </div>
-                  <div style={styles.aboutTimelineTextCol}>
-                    <div style={styles.aboutTimelineTitle}>{title}</div>
-                    <div style={styles.aboutTimelineBody}>{body}</div>
-                  </div>
+                  <div style={styles.aboutJourneyTitle}>{title}</div>
+                  <div style={styles.aboutJourneyBody}>{body}</div>
                 </div>
               ))}
             </div>
@@ -1156,11 +1330,11 @@ const EDU_FOCUS_AREAS = [
 ];
 
 const EDU_HIGHLIGHTS = [
-  "Built strong foundations in software engineering and problem-solving",
-  "Worked on projects across web, mobile, and UI/UX design",
-  "Actively participated in college hackathons and technical events",
-  "Contributed to campus activities and club organization",
-  "Continuously learning and applying modern technologies in real-world projects",
+  "Product-minded graduate focused on real business problems",
+  "Built automation tools across tax, insurance, and e-commerce",
+  "Pioneers for Change Fellow (2022 to 2025)",
+  "Hackathon participant, March 2025",
+  "IT Student Assistant in the STEM Lab",
 ];
 
 function EducationCard() {
@@ -1599,6 +1773,44 @@ function SkillsIconQueryOpt() {
   );
 }
 
+/** SaaS platforms & automation — cloud + automation arrow */
+function SkillsIconSaas() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M6 9.5a4 4 0 0 1 7.6-1.7A3.5 3.5 0 0 1 17 14H7.5A3.5 3.5 0 0 1 6 9.5z"
+        stroke="rgba(147, 197, 253, 0.95)"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path d="M8.3 17c0 1.7 1.7 3 3.7 3s3.7-1.3 3.7-3" stroke="rgba(125, 211, 252, 0.8)" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M14.3 17.6l1.4-.6-.2 1.5" stroke="rgba(125, 211, 252, 0.8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Relational database — cylinder (covers both SQL and MySQL) */
+function SkillsIconSql() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <ellipse cx="12" cy="6" rx="6.5" ry="2.6" stroke="rgba(147, 197, 253, 0.95)" strokeWidth="1.4" />
+      <path d="M5.5 6v12c0 1.4 2.9 2.6 6.5 2.6s6.5-1.2 6.5-2.6V6" stroke="rgba(147, 197, 253, 0.95)" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M5.5 12c0 1.4 2.9 2.6 6.5 2.6s6.5-1.2 6.5-2.6" stroke="rgba(125, 211, 252, 0.6)" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+/** Programming languages — code brackets */
+function SkillsIconLanguages() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M8.5 7.5L4 12l4.5 4.5" stroke="rgba(147, 197, 253, 0.95)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15.5 7.5L20 12l-4.5 4.5" stroke="rgba(147, 197, 253, 0.95)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13.3 5.5l-2.6 13" stroke="rgba(125, 211, 252, 0.8)" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 const SKILLS_COLUMNS = [
   {
     step: "01",
@@ -1619,11 +1831,11 @@ const SKILLS_COLUMNS = [
     subtitle: "Services, APIs, and reliable system behavior.",
     Icon: SkillsCatIconBackend,
     items: [
+      { label: "Programming Languages", desc: "Python · Java · C++ · JavaScript", customIcon: "languages" },
       { label: "Node.js", desc: "Runtime APIs, streams, and ecosystem tooling.", icon: "devicon-nodejs-plain" },
       { label: "Express.js", desc: "Routing, middleware, and structured HTTP APIs.", icon: "devicon-express-original" },
       { label: "REST APIs", desc: "Resource modeling, versioning, and contracts.", customIcon: "restApi" },
       { label: "Authentication", desc: "Sessions, tokens, and access control patterns.", customIcon: "auth" },
-      { label: "Error Handling", desc: "Structured failures, logging, and recovery.", icon: "devicon-mocha-plain" },
     ],
   },
   {
@@ -1633,7 +1845,7 @@ const SKILLS_COLUMNS = [
     Icon: SkillsCatIconDatabase,
     items: [
       { label: "MongoDB", desc: "Document modeling and flexible schemas.", icon: "devicon-mongodb-plain" },
-      { label: "MySQL", desc: "Relational tables, joins, and integrity.", icon: "devicon-mysql-original" },
+      { label: "SQL & MySQL", desc: "Relational tables, joins, and integrity.", customIcon: "sql" },
       { label: "Schema Design", desc: "Keys, indexes, and normalization tradeoffs.", icon: "devicon-graphql-plain" },
       { label: "Query Optimization", desc: "Plans, profiling, and efficient access paths.", customIcon: "queryOpt" },
     ],
@@ -1644,10 +1856,11 @@ const SKILLS_COLUMNS = [
     subtitle: "Shipping quality with disciplined collaboration.",
     Icon: SkillsCatIconTools,
     items: [
+      { label: "SaaS Platforms & Automation", desc: "Zoho CRM, Deluge scripting, custom workflows, Functions, process automation, reporting, analytics, Learning Central.", customIcon: "saas" },
       { label: "Git & GitHub", desc: "Branching, reviews, and clean history.", customIcon: "gitGithub" },
       { label: "Postman", desc: "Collections, environments, and API validation.", icon: "devicon-postman-plain" },
       { label: "Jira", desc: "Backlogs, sprints, and traceable delivery.", customIcon: "jira" },
-      { label: "Claude Code", desc: "Agent-assisted coding, refactors, and reviews.", customIcon: "claude", isNew: true },
+      { label: "AI-Augmented Development", desc: "Building, debugging, and shipping faster with AI, responsibly.", customIcon: "claude", isNew: true },
     ],
   },
 ];
@@ -1675,6 +1888,15 @@ function SkillsSkillRow({ item }) {
       break;
     case "gitGithub":
       inner = <SkillsIconGitGithub />;
+      break;
+    case "saas":
+      inner = <SkillsIconSaas />;
+      break;
+    case "sql":
+      inner = <SkillsIconSql />;
+      break;
+    case "languages":
+      inner = <SkillsIconLanguages />;
       break;
     default:
       inner = item.icon ? <i className={`devicon ${item.icon} colored`} style={styles.skillsDevIcon} aria-hidden /> : null;
@@ -1936,6 +2158,23 @@ function ExpIconTruck() {
     </svg>
   );
 }
+function ExpIconGlobe() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="url(#portfolio-exp-icon-grad)" strokeWidth="1.5" />
+      <path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" stroke="url(#portfolio-exp-icon-grad)" strokeWidth="1.45" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ExpIconTimer() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="13.5" r="7.5" stroke="url(#portfolio-exp-icon-grad)" strokeWidth="1.5" />
+      <path d="M12 9.5v4l2.5 1.6" stroke="url(#portfolio-exp-icon-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 2.5h5M12 2.5V6M18.5 7l1.5-1.5" stroke="url(#portfolio-exp-icon-grad)" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 function ExpIconCheckCircle() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -1992,6 +2231,135 @@ const EXP_TIMELINE_ITEMS = [
   },
 ];
 
+const EXP_ACTAX_ITEMS = [
+  {
+    text: "Built a Zoho Creator document app to replace FormSwift, saving $37/month and cutting form completion time by 75%",
+    Icon: ExpIconLayout,
+  },
+  {
+    text: "Configured Zoho CRM for 8 insurance product lines with custom fields, pipelines, and deal stages",
+    Icon: ExpIconTrend,
+  },
+  {
+    text: "Connected quote forms to CRM with validation rules to cut manual entry and route leads correctly",
+    Icon: ExpIconCheckCircle,
+  },
+  {
+    text: "Built an in-CRM Start/Pause/Stop timer using Deluge and the Zoho CRM API to log time per employee and client",
+    Icon: ExpIconTimer,
+  },
+  {
+    text: "Created Zoho Analytics reports showing hours per client, deal, and task for time-based invoicing",
+    Icon: ExpIconPeople,
+  },
+  {
+    text: "Designed marketing campaigns, email templates, and quote pages using Zoho Campaigns and Zoho Sites",
+    Icon: ExpIconGlobe,
+  },
+];
+
+const EXP_RING_GRADIENTS = [
+  "linear-gradient(135deg, #a78bfa, #6366f1)",
+  "linear-gradient(135deg, #f472b6, #d946ef)",
+  "linear-gradient(135deg, #fb923c, #f472b6)",
+  "linear-gradient(135deg, #60a5fa, #818cf8)",
+  "linear-gradient(135deg, #34d399, #22d3ee)",
+];
+
+const EXPERIENCES = [
+  {
+    company: "ACTAX",
+    logo: actaxLogo,
+    role: "Business Operations Analyst",
+    tech: "Zoho Creator • Zoho CRM • Zoho Analytics • Deluge • Zoho Forms • Zoho Campaigns • Zoho Sites • Process Automation • Digital Marketing",
+    date: "April 2026 • Current",
+    location: "San Jose, CA",
+    items: EXP_ACTAX_ITEMS,
+  },
+  {
+    company: "GK Business Group",
+    role: "E-Commerce Platform Product & Implementation Lead",
+    tech: "WordPress • WooCommerce • Elementor • PHP • MySQL",
+    date: "Dec 2025 • May 2026",
+    location: "Hayward, CA",
+    items: EXP_TIMELINE_ITEMS,
+  },
+];
+
+function ExperienceItem({ experience, stacked }) {
+  const { company, logo, role, tech, date, location, items } = experience;
+  return (
+    <div style={styles.expShell}>
+      <div style={styles.expGlowTL} aria-hidden />
+      <div style={styles.expGlowBR} aria-hidden />
+
+      <div style={{ ...styles.expHeader, ...(stacked ? styles.expHeaderStacked : null) }}>
+        <div style={{ ...styles.expHeaderCartCol, ...(stacked ? styles.expHeaderCartColStacked : null) }}>
+          <div style={{ ...styles.expCartHeroRing, ...(logo ? styles.expCartHeroRingLogo : null) }}>
+            {logo ? (
+              <img src={logo} alt={`${company} logo`} style={styles.expHeroLogo} />
+            ) : (
+              <ExpCartHero />
+            )}
+          </div>
+        </div>
+        <div style={{ ...styles.expHeaderMain, ...(stacked ? styles.expHeaderMainStacked : null) }}>
+          <div style={{ ...styles.expCompanyBadge, ...(stacked ? styles.expCompanyBadgeStacked : null) }}>{company}</div>
+          <h3 style={styles.expRoleTitle}>{role}</h3>
+          <div style={styles.expTechLine}>{tech}</div>
+        </div>
+        <div style={{ ...styles.expDateCol, ...(stacked ? styles.expDateColStacked : null) }}>
+          <div style={{ ...styles.expDateBadge, ...(stacked ? styles.expDateBadgeStacked : null) }}>{date}</div>
+          <div style={{ ...styles.expDateLocation, ...(stacked ? styles.expDateLocationStacked : null) }}>{location}</div>
+        </div>
+      </div>
+
+      <div style={styles.expDivider} aria-hidden />
+
+      <div style={styles.expTimelineBlock}>
+        <div style={styles.expCardsPanel}>
+          {items.map(({ text, Icon, link }, i) => (
+            <div
+              key={text}
+              className="exp-bullet-row"
+              style={{
+                ...styles.expCardRow,
+                ...(i === items.length - 1 ? styles.expCardRowLast : null),
+              }}
+            >
+              <div
+                style={{ ...styles.expCardIconRing, background: EXP_RING_GRADIENTS[i % EXP_RING_GRADIENTS.length] }}
+                aria-hidden
+              >
+                <div style={styles.expCardIconInner}>
+                  <Icon />
+                </div>
+              </div>
+              <div style={styles.expCardTextCol}>
+                <p style={styles.expCardBody}>{text}</p>
+                {link ? (
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="exp-live-site-btn"
+                    style={styles.expLiveSiteBtn}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden style={{ flexShrink: 0 }}>
+                      <path d="M14 4h6v6M20 4l-9 9M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {link.label}
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ExperienceCard() {
   const [stacked, setStacked] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(max-width: 720px)").matches : false
@@ -2008,53 +2376,13 @@ function ExperienceCard() {
     <div className="portfolio-exp-root" style={styles.expRoot}>
       <div style={styles.expParticleLeft} aria-hidden />
       <div style={styles.expParticleRight} aria-hidden />
-      <div style={styles.expShell}>
-        <svg width="0" height="0" aria-hidden style={{ position: "absolute", overflow: "hidden" }}>
-          <ExpIconDefs />
-        </svg>
-        <div style={styles.expGlowTL} aria-hidden />
-        <div style={styles.expGlowBR} aria-hidden />
-
-        <div style={{ ...styles.expHeader, ...(stacked ? styles.expHeaderStacked : null) }}>
-          <div style={{ ...styles.expHeaderCartCol, ...(stacked ? styles.expHeaderCartColStacked : null) }}>
-            <div style={styles.expCartHeroRing}>
-              <ExpCartHero />
-            </div>
-          </div>
-          <div style={{ ...styles.expHeaderMain, ...(stacked ? styles.expHeaderMainStacked : null) }}>
-            <div style={{ ...styles.expCompanyBadge, ...(stacked ? styles.expCompanyBadgeStacked : null) }}>GK Business Group</div>
-            <h3 style={styles.expRoleTitle}>E-Commerce Platform Product & Implementation Lead</h3>
-            <div style={styles.expTechLine}>WordPress • WooCommerce • Elementor • PHP • MySQL</div>
-          </div>
-          <div style={{ ...styles.expDateCol, ...(stacked ? styles.expDateColStacked : null) }}>
-            <div style={{ ...styles.expDateBadge, ...(stacked ? styles.expDateBadgeStacked : null) }}>Dec 2025 • Current</div>
-            <div style={{ ...styles.expDateLocation, ...(stacked ? styles.expDateLocationStacked : null) }}>Hayward, CA</div>
-          </div>
-        </div>
-
-        <div style={styles.expDivider} aria-hidden />
-
-        <div style={styles.expTimelineBlock}>
-          <div style={styles.expTimelineLine} aria-hidden />
-          <ul style={styles.expTimelineRows}>
-            {EXP_TIMELINE_ITEMS.map(({ text, Icon }) => (
-              <li key={text} className="exp-bullet-row" style={styles.expRow}>
-                <div style={styles.expRowGutter}>
-                  <div style={styles.expTimelineDot} aria-hidden />
-                </div>
-                <div style={styles.expRowContent}>
-                  <div style={styles.expRowIconRing}>
-                    <Icon />
-                  </div>
-                  <span style={styles.expDiamond} aria-hidden>
-                    ◆
-                  </span>
-                  <p style={styles.expRowText}>{text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <svg width="0" height="0" aria-hidden style={{ position: "absolute", overflow: "hidden" }}>
+        <ExpIconDefs />
+      </svg>
+      <div style={styles.expStack}>
+        {EXPERIENCES.map((experience) => (
+          <ExperienceItem key={experience.company} experience={experience} stacked={stacked} />
+        ))}
       </div>
     </div>
   );
@@ -2080,6 +2408,10 @@ function projectBadgeAccent(badge) {
       return { border: "1px solid rgba(129, 140, 248, 0.5)", color: "rgba(199, 210, 254, 0.95)", glow: "rgba(99, 102, 241, 0.28)" };
     case "Python":
       return { border: "1px solid rgba(250, 204, 21, 0.42)", color: "rgba(253, 224, 71, 0.95)", glow: "rgba(234, 179, 8, 0.25)" };
+    case "Marketing":
+      return { border: "1px solid rgba(217, 70, 239, 0.45)", color: "rgba(245, 208, 254, 0.95)", glow: "rgba(217, 70, 239, 0.3)" };
+    case "Web Design":
+      return { border: "1px solid rgba(45, 212, 191, 0.45)", color: "rgba(153, 246, 228, 0.95)", glow: "rgba(45, 212, 191, 0.28)" };
     default:
       return { border: "1px solid rgba(148, 163, 184, 0.35)", color: "rgba(226, 232, 240, 0.9)", glow: "rgba(148, 163, 184, 0.2)" };
   }
@@ -2099,6 +2431,10 @@ function projectDeviconClass(badge) {
       return "devicon-selenium-original";
     case "WordPress":
       return "devicon-wordpress-plain";
+    case "Marketing":
+      return "devicon-canva-original";
+    case "Web Design":
+      return "devicon-html5-plain";
     default:
       return "devicon-github-original";
   }
@@ -2140,6 +2476,20 @@ function Projects() {
   }, []);
 
   const items = [
+    {
+      name: "The Website Gallery",
+      badge: "Web Design",
+      desc: "A gallery of websites I've designed and built.",
+      tags: ["Web Design", "UI/UX", "Frontend"],
+      href: `${import.meta.env.BASE_URL}gallery.html`,
+    },
+    {
+      name: "Marketing Projects",
+      badge: "Marketing",
+      desc: "A collection of marketing and brand projects built for real businesses.",
+      tags: ["Branding", "Web", "Campaigns"],
+      href: `${import.meta.env.BASE_URL}marketing.html`,
+    },
     {
       name: "Mannat Portfolio (this site)",
       badge: "React + Vite",
@@ -2296,6 +2646,7 @@ function Contact() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState("idle"); // idle | sending | ok | err
   const [errMsg, setErrMsg] = useState("");
   const [wide, setWide] = useState(() => (typeof window !== "undefined" ? window.matchMedia("(min-width: 900px)").matches : true));
@@ -2348,11 +2699,19 @@ function Contact() {
   const send = async () => {
     setStatus("sending");
     setErrMsg("");
+    const nm = name.trim();
+    const em = email.trim();
+    const msg = message.trim();
+    if (!nm || nm.length > 80 || !em || em.length > 120 || !msg || msg.length > 2000) {
+      setStatus("err");
+      setErrMsg("Please fill in all fields.");
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}/api/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name: nm, email: em, message: msg, website: honeypot }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -2362,7 +2721,8 @@ function Contact() {
       setName("");
       setEmail("");
       setMessage("");
-      setTimeout(() => setStatus("idle"), 2800);
+      setHoneypot("");
+      setTimeout(() => setStatus("idle"), 6000);
     } catch (e) {
       setStatus("err");
       setErrMsg(e.message || "Error");
@@ -2473,7 +2833,7 @@ function Contact() {
           </h2>
 
           <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.6, color: "rgba(148, 163, 184, 0.92)", maxWidth: 400 }}>
-            Share anything — a project, an idea, or just a hello. I&apos;d love to hear from you!
+            Share anything a project, an idea, or just a hello. I&apos;d love to hear from you!
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 18, marginTop: 4 }}>
@@ -2494,7 +2854,7 @@ function Contact() {
               </div>
               <div>
                 <div style={rowLabel}>Location</div>
-                <div style={rowMeta}>Hayward, CA</div>
+                <div style={rowMeta}>San Jose, CA, USA</div>
               </div>
             </div>
           </div>
@@ -2617,7 +2977,7 @@ function Contact() {
           </h3>
 
           <div style={{ display: "grid", gridTemplateColumns: wide ? "1fr 1fr" : "1fr", gap: 12 }}>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={inputBase} autoComplete="name" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={inputBase} autoComplete="name" maxLength={80} />
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -2625,6 +2985,7 @@ function Contact() {
               style={inputBase}
               type="email"
               autoComplete="email"
+              maxLength={120}
             />
           </div>
 
@@ -2633,7 +2994,18 @@ function Contact() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Write your message..."
             rows={5}
+            maxLength={2000}
             style={{ ...inputBase, minHeight: 120, resize: "vertical", lineHeight: 1.5 }}
+          />
+
+          <input
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            placeholder="Leave this empty"
+            style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
           />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -2662,9 +3034,9 @@ function Contact() {
               {status === "sending" ? "Sending…" : "Send Message →"}
             </button>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", minHeight: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", minHeight: 28 }} aria-live="polite">
               {status === "ok" && (
-                <div style={styles.contactStatusOk}>Message sent — I&apos;ll get back to you soon.</div>
+                <div style={styles.contactStatusOk}>Your message has been sent. I&apos;ll get back to you soon.</div>
               )}
               {status === "err" && <div style={styles.contactStatusErr}>{errMsg}</div>}
             </div>
@@ -2683,7 +3055,7 @@ function Contact() {
             <span style={{ color: "rgba(244, 114, 182, 0.55)", display: "flex" }}>
               <IconContactClock />
             </span>
-            I typically respond within 24–48 hours.
+            I typically respond within 24–48 Business Hours.
           </div>
         </div>
       </div>
@@ -3328,83 +3700,349 @@ const styles = {
     transition: "transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease",
   },
 
-  aboutTimeline: {
-    position: "relative",
-    paddingTop: 4,
-    paddingBottom: 8,
-  },
-
-  aboutTimelineLine: {
-    position: "absolute",
-    left: 19,
-    top: 12,
-    bottom: 12,
-    width: 2,
-    borderRadius: 2,
-    background: "linear-gradient(180deg, rgba(167, 139, 250, 0.55), rgba(99, 102, 241, 0.22), rgba(167, 139, 250, 0.1))",
-    boxShadow: "0 0 8px rgba(139, 92, 246, 0.14)",
-  },
-
-  aboutTimelineRow: {
-    position: "relative",
+  aboutCardsGrid: {
     display: "grid",
-    gridTemplateColumns: "40px 52px minmax(0, 1fr)",
-    columnGap: 12,
-    alignItems: "start",
-    marginBottom: 20,
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: 12,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
 
-  aboutTimelineRowLast: {
-    marginBottom: 0,
-  },
-
-  aboutTimelineDotCol: {
+  aboutJourneyCard: {
     display: "flex",
-    justifyContent: "center",
-    paddingTop: 16,
+    flexDirection: "column",
+    gap: 10,
+    padding: "16px 16px 18px",
+    borderRadius: 16,
+    background: "rgba(255, 255, 255, 0.035)",
+    border: "1px solid rgba(167, 139, 250, 0.18)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 28px rgba(0,0,0,0.22)",
+    transition: "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
   },
 
-  aboutTimelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 999,
-    background: "linear-gradient(135deg, #fae8ff, #c084fc)",
-    boxShadow:
-      "0 0 0 3px rgba(10, 8, 18, 0.98), 0 0 10px 2px rgba(192, 132, 252, 0.22), 0 0 18px rgba(139, 92, 246, 0.1)",
-    zIndex: 1,
-  },
-
-  aboutTimelineIconRing: {
-    width: 48,
-    height: 48,
+  aboutJourneyIconRing: {
+    width: 44,
+    height: 44,
     borderRadius: 999,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     background: "rgba(255, 255, 255, 0.045)",
     border: "1px solid rgba(167, 139, 250, 0.32)",
-    boxShadow:
-      "0 0 14px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
-    marginTop: 4,
+    boxShadow: "0 0 14px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
 
-  aboutTimelineTextCol: {
-    paddingTop: 8,
-    minWidth: 0,
-  },
-
-  aboutTimelineTitle: {
+  aboutJourneyTitle: {
     fontSize: 15,
     fontWeight: 800,
     color: "#f8fafc",
     letterSpacing: "-0.01em",
   },
 
-  aboutTimelineBody: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 1.55,
+  aboutJourneyBody: {
+    fontSize: 12.5,
+    lineHeight: 1.5,
     color: "rgba(186, 198, 220, 0.88)",
+  },
+
+  /* Hero / landing intro */
+  hero: {
+    position: "relative",
+    minHeight: "calc(100vh - 110px)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    padding: "0 16px 40px",
+    boxSizing: "border-box",
+  },
+
+  heroInner: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 10,
+    transition: "transform 0.2s ease-out, opacity 0.2s ease-out",
+  },
+
+  heroGreeting: {
+    fontSize: "clamp(15px, 2.4vw, 22px)",
+    fontWeight: 600,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: "rgba(196, 181, 253, 0.9)",
+  },
+
+  heroName: {
+    margin: 0,
+    fontSize: "clamp(54px, 13vw, 140px)",
+    fontWeight: 900,
+    lineHeight: 1,
+    letterSpacing: "-0.02em",
+    background: "linear-gradient(135deg, #e9d5ff 0%, #c084fc 42%, #818cf8 100%)",
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    color: "transparent",
+  },
+
+  heroRole: {
+    margin: "8px 0 0",
+    fontSize: "clamp(18px, 3vw, 30px)",
+    fontWeight: 600,
+    color: "rgba(226, 232, 240, 0.9)",
+  },
+
+  heroRoleAccent: {
+    background: "linear-gradient(135deg, #f472b6, #a78bfa)",
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    color: "transparent",
+    fontWeight: 800,
+  },
+
+  heroScroll: {
+    position: "absolute",
+    bottom: "clamp(20px, 5vh, 46px)",
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    color: "rgba(196, 181, 253, 0.7)",
+    transition: "opacity 0.2s ease-out",
+  },
+
+  heroScrollText: {
+    fontSize: 12,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    fontWeight: 600,
+  },
+
+  heroScrollChevron: {
+    display: "flex",
+  },
+
+  /* Top navigation bar (scroll-animated) */
+  topBar: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    height: 76,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 18,
+    padding: "0 clamp(18px, 3vw, 34px)",
+    boxSizing: "border-box",
+    overflow: "hidden",
+    transition: "background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
+  },
+
+  topBarMobile: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    boxSizing: "border-box",
+    padding: "0 clamp(12px, 4vw, 18px)",
+    background: "rgba(7, 6, 13, 0.94)",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
+    borderBottom: "1px solid rgba(139, 92, 246, 0.18)",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+  },
+
+  topBarRowMobile: {
+    height: 60,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  topBarBrand: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    flexShrink: 0,
+    transition: "transform 0.3s ease-out",
+  },
+
+  topBarAvatarOuter: {
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    padding: 2.5,
+    flexShrink: 0,
+    background: "linear-gradient(135deg, rgba(167,139,250,0.95), rgba(99,102,241,0.75), rgba(168,85,247,0.55))",
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 0 22px rgba(168, 85, 247, 0.4)",
+    overflow: "hidden",
+  },
+
+  topBarAvatarSm: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    padding: 2,
+    flexShrink: 0,
+    background: "linear-gradient(135deg, rgba(167,139,250,0.95), rgba(99,102,241,0.75), rgba(168,85,247,0.55))",
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 0 18px rgba(168, 85, 247, 0.4)",
+    overflow: "hidden",
+  },
+
+  topBarNameWrap: {
+    display: "flex",
+    flexDirection: "column",
+    lineHeight: 1,
+  },
+
+  topBarName: {
+    color: "#fafafa",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    fontSize: 16,
+  },
+
+  topBarTag: {
+    color: "rgba(196, 181, 253, 0.9)",
+    marginTop: 3,
+    fontSize: 11,
+    fontWeight: 500,
+    letterSpacing: "0.04em",
+  },
+
+  topNavRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    flexShrink: 1,
+    minWidth: 0,
+    transition: "transform 0.3s ease-out, opacity 0.3s ease-out",
+  },
+
+  topNavItem: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 7,
+    padding: "8px 11px",
+    borderRadius: 12,
+    border: "1px solid transparent",
+    background: "transparent",
+    color: "rgba(226, 232, 240, 0.7)",
+    fontWeight: 600,
+    fontSize: 12.5,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
+  },
+
+  topNavItemActive: {
+    background: "linear-gradient(135deg, rgba(109,56,255,0.4), rgba(79, 70, 229, 0.32))",
+    border: "1px solid rgba(167, 139, 250, 0.42)",
+    color: "#ffffff",
+    boxShadow: "0 0 20px rgba(139, 92, 246, 0.25)",
+  },
+
+  topNavItemMobile: {
+    width: "100%",
+    justifyContent: "flex-start",
+    padding: "12px 12px",
+    fontSize: 13.5,
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    minHeight: 46,
+    boxSizing: "border-box",
+  },
+
+  topNavIcon: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "inherit",
+    flexShrink: 0,
+  },
+
+  topNavLabel: {
+    lineHeight: 1.1,
+  },
+
+  topBarBurger: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    border: "1px solid rgba(167, 139, 250, 0.25)",
+    background: "rgba(255,255,255,0.04)",
+    color: "rgba(226,232,240,0.92)",
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+
+  topMenuPanel: {
+    paddingTop: 4,
+    paddingBottom: 14,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+
+  topMenuGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 8,
+  },
+
+  topMenuSocials: {
+    display: "flex",
+    gap: 10,
+    justifyContent: "center",
+    paddingTop: 4,
+  },
+
+  homeFooter: {
+    maxWidth: 1240,
+    margin: "0 auto",
+    padding: "26px clamp(16px, 4vw, 28px) 36px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 14,
+    borderTop: "1px solid rgba(255,255,255,0.06)",
+  },
+
+  homeFooterTagline: {
+    color: "rgba(226, 232, 240, 0.82)",
+    fontSize: 14,
+    fontWeight: 600,
+    letterSpacing: "0.02em",
+  },
+
+  homeFooterSocials: {
+    display: "flex",
+    gap: 12,
+  },
+
+  homeFooterCopyright: {
+    color: "rgba(148, 163, 184, 0.7)",
+    fontSize: 12,
+  },
+
+  homeFooterVisits: {
+    color: "rgba(148, 163, 184, 0.45)",
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
   },
 
   main: {
@@ -3940,6 +4578,14 @@ const styles = {
     filter: "blur(0.35px)",
   },
 
+  expStack: {
+    position: "relative",
+    zIndex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "clamp(28px, 5vw, 56px)",
+  },
+
   expShell: {
     position: "relative",
     zIndex: 1,
@@ -4014,10 +4660,22 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "linear-gradient(145deg, rgba(124, 58, 237, 0.55), rgba(99, 102, 241, 0.35))",
-    border: "1px solid rgba(196, 181, 253, 0.35)",
-    boxShadow:
-      "0 0 0 1px rgba(10, 8, 18, 0.5), 0 0 28px rgba(167, 139, 250, 0.35), 0 0 52px rgba(124, 58, 237, 0.15), inset 0 1px 0 rgba(255,255,255,0.12)",
+    background: "linear-gradient(145deg, rgba(124, 58, 237, 0.1), rgba(99, 102, 241, 0.06))",
+    border: "1px solid rgba(196, 181, 253, 0.1)",
+    boxShadow: "0 0 0 1px rgba(10, 8, 18, 0.45)",
+  },
+
+  expCartHeroRingLogo: {
+    background: "linear-gradient(145deg, rgba(124, 58, 237, 0.1), rgba(99, 102, 241, 0.06))",
+    border: "1px solid rgba(196, 181, 253, 0.1)",
+    boxShadow: "0 0 0 1px rgba(10, 8, 18, 0.45)",
+  },
+
+  expHeroLogo: {
+    width: 50,
+    height: 50,
+    objectFit: "contain",
+    borderRadius: 12,
   },
 
   expHeaderMain: {
@@ -4036,9 +4694,9 @@ const styles = {
   expCompanyBadge: {
     display: "inline-flex",
     alignSelf: "flex-start",
-    padding: "5px 12px",
+    padding: "6px 14px",
     borderRadius: 999,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 800,
     letterSpacing: "0.12em",
     color: "rgba(255, 255, 255, 0.95)",
@@ -4095,7 +4753,7 @@ const styles = {
   },
 
   expDateLocation: {
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: 650,
     letterSpacing: "0.04em",
     color: "rgba(148, 163, 184, 0.92)",
@@ -4231,6 +4889,84 @@ const styles = {
     lineHeight: 1.58,
     fontWeight: 500,
     color: "rgba(203, 213, 225, 0.93)",
+  },
+
+  expCardsPanel: {
+    borderRadius: 16,
+    padding: "4px 0",
+    background: "rgba(255, 255, 255, 0.02)",
+    border: "1px solid rgba(51, 65, 107, 0.35)",
+    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 36px rgba(0, 0, 0, 0.22)",
+  },
+
+  expCardRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+    padding: "16px 18px",
+    transition: "background 0.2s ease",
+  },
+
+  expCardRowLast: {},
+
+  expCardIconRing: {
+    flexShrink: 0,
+    width: 46,
+    height: 46,
+    borderRadius: 999,
+    padding: 2,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 0 16px rgba(0, 0, 0, 0.35)",
+  },
+
+  expCardIconInner: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 999,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(7, 11, 20, 0.95))",
+  },
+
+  expCardTextCol: {
+    flex: 1,
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingTop: 6,
+  },
+
+  expCardBody: {
+    margin: 0,
+    width: "100%",
+    minWidth: 0,
+    fontSize: 14,
+    lineHeight: 1.6,
+    fontWeight: 500,
+    color: "rgba(203, 213, 225, 0.93)",
+  },
+
+  expLiveSiteBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 7,
+    padding: "6px 12px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.01em",
+    color: "rgba(233, 213, 255, 0.98)",
+    textDecoration: "none",
+    background: "linear-gradient(135deg, rgba(124, 58, 237, 0.28), rgba(99, 102, 241, 0.2))",
+    border: "1px solid rgba(167, 139, 250, 0.4)",
+    boxShadow: "0 0 14px rgba(124, 58, 237, 0.15)",
+    transition: "transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease",
   },
 
   /* Resume — premium glass (matches skillsShell / prRoot) */

@@ -1,125 +1,845 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { API_BASE } from "./apiBase.js";
 
-function clampLabName(name) {
-  const n = (name || "").trim();
-  if (!n) return "Player";
-  return n.length > 18 ? n.slice(0, 18) : n;
+/* ----------------------------------------------------------------
+   "Leave Your Mark" — an interactive digital guestbook.
+   Visitors doodle on a canvas (brush, neon glow, eraser, fill, shapes,
+   text), add a name + short message, and submit. Saved to the portfolio
+   API (Node/Express/MongoDB) and shown on The Guest Wall.
+------------------------------------------------------------------- */
+
+const CANVAS_W = 680;
+const CANVAS_H = 420;
+const CANVAS_BG = "#0b1020";
+const HISTORY_CAP = 20;
+
+const PALETTE = [
+  "#f472b6",
+  "#e879f9",
+  "#a78bfa",
+  "#818cf8",
+  "#38bdf8",
+  "#34d399",
+  "#fbbf24",
+  "#fb7185",
+  "#f8fafc",
+];
+
+const BRUSHES = [
+  { label: "S", size: 3, name: "Small" },
+  { label: "M", size: 6, name: "Medium" },
+  { label: "L", size: 11, name: "Large" },
+];
+
+const SHAPE_TOOLS = ["line", "curve", "rect", "circle", "triangle", "star", "heart"];
+
+const FONTS = [
+  { name: "Caveat", css: '"Caveat", cursive' },
+  { name: "Pacifico", css: '"Pacifico", cursive' },
+  { name: "Permanent Marker", css: '"Permanent Marker", cursive' },
+  { name: "Bangers", css: '"Bangers", cursive' },
+  { name: "Poppins", css: '"Poppins", sans-serif' },
+];
+
+const NAME_MAX = 24;
+const MSG_MAX = 140;
+const TEXT_MAX = 40;
+
+function textFontPx(size) {
+  return Math.round(size * 4 + 12); // S=24, M=36, L=56
 }
 
-function loadPB() {
-  try {
-    const raw = localStorage.getItem("mannat_typing_pb");
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
+/* ---------------- drawing geometry + rendering (pure) ---------------- */
+
+function hexToRgb(hex) {
+  let h = String(hex || "#ffffff").replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const n = parseInt(h, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function paintBackground(ctx) {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = CANVAS_BG;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  ctx.fillStyle = "rgba(148,163,184,0.10)";
+  for (let y = 24; y < CANVAS_H; y += 28) {
+    for (let x = 24; x < CANVAS_W; x += 28) {
+      ctx.beginPath();
+      ctx.arc(x, y, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function lineSeg(ctx, a, b) {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+}
+
+function strokeDotAt(ctx, op, p) {
+  ctx.save();
+  if (op.mode === "glow") {
+    ctx.shadowColor = op.color;
+    ctx.shadowBlur = Math.max(8, op.size * 2.2);
+  }
+  ctx.fillStyle = op.mode === "eraser" ? CANVAS_BG : op.color;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, Math.max(0.5, op.size / 2), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeSegAt(ctx, op, a, b) {
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  if (op.mode === "glow") {
+    ctx.shadowColor = op.color;
+    ctx.shadowBlur = Math.max(8, op.size * 2.2);
+    ctx.strokeStyle = op.color;
+    ctx.lineWidth = op.size;
+    lineSeg(ctx, a, b);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.85)";
+    ctx.lineWidth = Math.max(1, op.size * 0.4);
+    lineSeg(ctx, a, b);
+  } else {
+    ctx.strokeStyle = op.mode === "eraser" ? CANVAS_BG : op.color;
+    ctx.lineWidth = op.size;
+    lineSeg(ctx, a, b);
+  }
+  ctx.restore();
+}
+
+function renderStroke(ctx, op) {
+  const draw = (pts) => {
+    if (pts.length === 1) {
+      strokeDotAt(ctx, op, pts[0]);
+      return;
+    }
+    strokeDotAt(ctx, op, pts[0]);
+    for (let i = 1; i < pts.length; i++) strokeSegAt(ctx, op, pts[i - 1], pts[i]);
+  };
+  draw(op.points);
+  if (op.mirror) draw(op.points.map((p) => ({ x: CANVAS_W - p.x, y: p.y })));
+}
+
+function starPath(ctx, cx, cy, outer) {
+  const inner = outer * 0.48;
+  const spikes = 5;
+  let rot = -Math.PI / 2;
+  const step = Math.PI / spikes;
+  ctx.moveTo(cx + Math.cos(rot) * outer, cy + Math.sin(rot) * outer);
+  for (let i = 0; i < spikes; i++) {
+    rot += step;
+    ctx.lineTo(cx + Math.cos(rot) * inner, cy + Math.sin(rot) * inner);
+    rot += step;
+    ctx.lineTo(cx + Math.cos(rot) * outer, cy + Math.sin(rot) * outer);
+  }
+  ctx.closePath();
+}
+
+function heartPath(ctx, x, y, w, h) {
+  const cx = x + w / 2;
+  const topY = y + h * 0.3;
+  ctx.moveTo(cx, y + h);
+  ctx.bezierCurveTo(x + w * 1.0, y + h * 0.62, x + w * 0.78, topY - h * 0.28, cx, topY);
+  ctx.bezierCurveTo(x + w * 0.22, topY - h * 0.28, x + w * 0.0, y + h * 0.62, cx, y + h);
+  ctx.closePath();
+}
+
+function buildShapePath(ctx, shape, s, e) {
+  const minX = Math.min(s.x, e.x);
+  const minY = Math.min(s.y, e.y);
+  const w = Math.abs(e.x - s.x);
+  const h = Math.abs(e.y - s.y);
+  const cx = (s.x + e.x) / 2;
+  const cy = (s.y + e.y) / 2;
+  ctx.beginPath();
+  switch (shape) {
+    case "line":
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(e.x, e.y);
+      break;
+    case "curve": {
+      // Quadratic arc: bulge perpendicular to the chord for a smooth curve.
+      const mx = (s.x + e.x) / 2;
+      const my = (s.y + e.y) / 2;
+      const dx = e.x - s.x;
+      const dy = e.y - s.y;
+      ctx.moveTo(s.x, s.y);
+      ctx.quadraticCurveTo(mx - dy * 0.45, my + dx * 0.45, e.x, e.y);
+      break;
+    }
+    case "rect":
+      ctx.rect(minX, minY, w, h);
+      break;
+    case "circle":
+      ctx.ellipse(cx, cy, Math.max(1, w / 2), Math.max(1, h / 2), 0, 0, Math.PI * 2);
+      break;
+    case "triangle":
+      ctx.moveTo(cx, minY);
+      ctx.lineTo(minX, minY + h);
+      ctx.lineTo(minX + w, minY + h);
+      ctx.closePath();
+      break;
+    case "star":
+      starPath(ctx, cx, cy, Math.max(2, Math.min(w, h) / 2));
+      break;
+    case "heart":
+      heartPath(ctx, minX, minY, w, h);
+      break;
+    default:
+      break;
   }
 }
 
-function savePB(obj) {
+function renderShape(ctx, op) {
+  const drawOnce = (s, e) => {
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = op.color;
+    ctx.fillStyle = op.color;
+    ctx.lineWidth = op.size;
+    buildShapePath(ctx, op.shape, s, e);
+    if (op.shape === "line" || op.shape === "curve" || !op.fill) ctx.stroke();
+    else ctx.fill();
+    ctx.restore();
+  };
+  drawOnce(op.start, op.end);
+  if (op.mirror) {
+    drawOnce({ x: CANVAS_W - op.start.x, y: op.start.y }, { x: CANVAS_W - op.end.x, y: op.end.y });
+  }
+}
+
+function fontShorthand(op) {
+  return `${op.size}px "${op.font}", sans-serif`;
+}
+
+function renderText(ctx, op) {
+  ctx.save();
+  ctx.fillStyle = op.color;
+  ctx.textBaseline = "top";
+  ctx.font = fontShorthand(op);
+  ctx.fillText(op.text, op.x, op.y);
+  ctx.restore();
+}
+
+function floodFill(ctx, x, y, hex) {
+  x = Math.round(x);
+  y = Math.round(y);
+  if (x < 0 || y < 0 || x >= CANVAS_W || y >= CANVAS_H) return;
+  const img = ctx.getImageData(0, 0, CANVAS_W, CANVAS_H);
+  const d = img.data;
+  const idx = (y * CANVAS_W + x) * 4;
+  const tr = d[idx];
+  const tg = d[idx + 1];
+  const tb = d[idx + 2];
+  const [fr, fg, fb] = hexToRgb(hex);
+  if (Math.abs(tr - fr) <= 2 && Math.abs(tg - fg) <= 2 && Math.abs(tb - fb) <= 2) return;
+  const tol = 48;
+  const visited = new Uint8Array(CANVAS_W * CANVAS_H);
+  const stack = [x, y];
+  while (stack.length) {
+    const cy = stack.pop();
+    const cx = stack.pop();
+    if (cx < 0 || cy < 0 || cx >= CANVAS_W || cy >= CANVAS_H) continue;
+    const pi = cy * CANVAS_W + cx;
+    if (visited[pi]) continue;
+    const i = pi * 4;
+    if (Math.abs(d[i] - tr) > tol || Math.abs(d[i + 1] - tg) > tol || Math.abs(d[i + 2] - tb) > tol) continue;
+    visited[pi] = 1;
+    d[i] = fr;
+    d[i + 1] = fg;
+    d[i + 2] = fb;
+    d[i + 3] = 255;
+    stack.push(cx + 1, cy, cx - 1, cy, cx, cy + 1, cx, cy - 1);
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function renderFill(ctx, op) {
+  floodFill(ctx, op.x, op.y, op.color);
+  if (op.mirror) floodFill(ctx, CANVAS_W - op.x, op.y, op.color);
+}
+
+function renderOp(ctx, op) {
+  if (op.type === "stroke") renderStroke(ctx, op);
+  else if (op.type === "shape") renderShape(ctx, op);
+  else if (op.type === "fill") renderFill(ctx, op);
+  else if (op.type === "text") renderText(ctx, op);
+}
+
+/* ---------------- select / transform helpers ---------------- */
+
+function isSelectable(op) {
+  if (!op) return false;
+  if (op.type === "fill") return false;
+  if (op.type === "stroke" && op.mode === "eraser") return false;
+  return op.type === "stroke" || op.type === "shape" || op.type === "text";
+}
+
+function cloneOp(op) {
+  return JSON.parse(JSON.stringify(op));
+}
+
+function expandBBox(box, pad) {
+  return { x: box.x - pad, y: box.y - pad, w: box.w + pad * 2, h: box.h + pad * 2 };
+}
+
+function unionBBox(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const x1 = Math.min(a.x, b.x);
+  const y1 = Math.min(a.y, b.y);
+  const x2 = Math.max(a.x + a.w, b.x + b.w);
+  const y2 = Math.max(a.y + a.h, b.y + b.h);
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
+function pointsBBox(pts, pad = 0) {
+  if (!pts || pts.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
+  let minX = pts[0].x;
+  let minY = pts[0].y;
+  let maxX = pts[0].x;
+  let maxY = pts[0].y;
+  for (let i = 1; i < pts.length; i++) {
+    minX = Math.min(minX, pts[i].x);
+    minY = Math.min(minY, pts[i].y);
+    maxX = Math.max(maxX, pts[i].x);
+    maxY = Math.max(maxY, pts[i].y);
+  }
+  return expandBBox({ x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) }, pad);
+}
+
+function opBBox(op, measureCtx) {
+  if (!op) return null;
+  if (op.type === "stroke") {
+    const pad = Math.max(4, (op.size || 6) / 2 + 3);
+    let box = pointsBBox(op.points, pad);
+    if (op.mirror) {
+      box = unionBBox(
+        box,
+        pointsBBox(
+          op.points.map((p) => ({ x: CANVAS_W - p.x, y: p.y })),
+          pad
+        )
+      );
+    }
+    return box;
+  }
+  if (op.type === "shape") {
+    const pad = Math.max(4, (op.size || 6) / 2 + 3);
+    let box = pointsBBox([op.start, op.end], pad);
+    if (op.mirror) {
+      box = unionBBox(
+        box,
+        pointsBBox(
+          [
+            { x: CANVAS_W - op.start.x, y: op.start.y },
+            { x: CANVAS_W - op.end.x, y: op.end.y },
+          ],
+          pad
+        )
+      );
+    }
+    return box;
+  }
+  if (op.type === "text") {
+    let w = Math.max(20, (op.text || "").length * (op.size || 24) * 0.55);
+    if (measureCtx) {
+      try {
+        measureCtx.save();
+        measureCtx.font = `${op.size}px "${op.font}", sans-serif`;
+        w = Math.max(12, measureCtx.measureText(op.text || "").width);
+        measureCtx.restore();
+      } catch {
+        /* ignore */
+      }
+    }
+    const h = op.size || 24;
+    return { x: op.x, y: op.y, w, h };
+  }
+  return null;
+}
+
+function pointInBBox(p, box, slop = 0) {
+  if (!box) return false;
+  return p.x >= box.x - slop && p.x <= box.x + box.w + slop && p.y >= box.y - slop && p.y <= box.y + box.h + slop;
+}
+
+function handlePositions(box) {
+  if (!box) return {};
+  const { x, y, w, h } = box;
+  return {
+    nw: { x, y },
+    ne: { x: x + w, y },
+    sw: { x, y: y + h },
+    se: { x: x + w, y: y + h },
+  };
+}
+
+function hitHandle(p, box, radius = 14) {
+  const hs = handlePositions(box);
+  for (const name of ["nw", "ne", "sw", "se"]) {
+    const h = hs[name];
+    if (Math.hypot(p.x - h.x, p.y - h.y) <= radius) return name;
+  }
+  return null;
+}
+
+function translateOp(op, dx, dy) {
+  const next = cloneOp(op);
+  if (next.type === "stroke") {
+    next.points = next.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }));
+  } else if (next.type === "shape") {
+    next.start = { x: next.start.x + dx, y: next.start.y + dy };
+    next.end = { x: next.end.x + dx, y: next.end.y + dy };
+  } else if (next.type === "text") {
+    next.x += dx;
+    next.y += dy;
+  }
+  return next;
+}
+
+function scaleOp(op, origBox, newBox) {
+  if (!origBox || origBox.w < 1 || origBox.h < 1 || !newBox) return cloneOp(op);
+  const sx = newBox.w / origBox.w;
+  const sy = newBox.h / origBox.h;
+  const map = (pt) => ({
+    x: newBox.x + (pt.x - origBox.x) * sx,
+    y: newBox.y + (pt.y - origBox.y) * sy,
+  });
+  const next = cloneOp(op);
+  if (next.type === "stroke") {
+    next.points = next.points.map(map);
+    next.size = Math.max(1, (next.size || 6) * ((Math.abs(sx) + Math.abs(sy)) / 2));
+  } else if (next.type === "shape") {
+    next.start = map(next.start);
+    next.end = map(next.end);
+    next.size = Math.max(1, (next.size || 6) * ((Math.abs(sx) + Math.abs(sy)) / 2));
+  } else if (next.type === "text") {
+    next.x = newBox.x;
+    next.y = newBox.y;
+    next.size = Math.max(10, (next.size || 24) * Math.abs(sy));
+  }
+  return next;
+}
+
+function resizeBoxFromHandle(origBox, handle, p) {
+  let { x, y, w, h } = origBox;
+  const x2 = x + w;
+  const y2 = y + h;
+  let nx1 = x;
+  let ny1 = y;
+  let nx2 = x2;
+  let ny2 = y2;
+  if (handle.includes("w")) nx1 = p.x;
+  if (handle.includes("e")) nx2 = p.x;
+  if (handle.includes("n")) ny1 = p.y;
+  if (handle.includes("s")) ny2 = p.y;
+  const minSize = 8;
+  if (Math.abs(nx2 - nx1) < minSize) {
+    if (handle.includes("w")) nx1 = nx2 - minSize;
+    else nx2 = nx1 + minSize;
+  }
+  if (Math.abs(ny2 - ny1) < minSize) {
+    if (handle.includes("n")) ny1 = ny2 - minSize;
+    else ny2 = ny1 + minSize;
+  }
+  return {
+    x: Math.min(nx1, nx2),
+    y: Math.min(ny1, ny2),
+    w: Math.abs(nx2 - nx1),
+    h: Math.abs(ny2 - ny1),
+  };
+}
+
+function drawSelectionOverlay(ctx, box) {
+  if (!box) return;
+  ctx.save();
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = "rgba(232, 121, 249, 0.95)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  ctx.setLineDash([]);
+  const hs = handlePositions(box);
+  for (const h of Object.values(hs)) {
+    ctx.fillStyle = "#0b1020";
+    ctx.strokeStyle = "rgba(232, 121, 249, 0.95)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.rect(h.x - 5, h.y - 5, 10, 10);
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ---------------- WebP export (under 100 KB) ---------------- */
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+async function exportCompressedWebp(src) {
+  const LIMIT = 100 * 1024;
+  let best = null;
+  for (const q of [0.92, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+    const blob = await canvasToBlob(src, "image/webp", q);
+    if (blob && blob.type === "image/webp") {
+      best = blob;
+      if (blob.size <= LIMIT) return blob;
+    }
+  }
+  let scale = 0.85;
+  for (let i = 0; i < 4; i++) {
+    const w = Math.max(64, Math.round(CANVAS_W * scale));
+    const h = Math.max(40, Math.round(CANVAS_H * scale));
+    const tmp = document.createElement("canvas");
+    tmp.width = w;
+    tmp.height = h;
+    tmp.getContext("2d").drawImage(src, 0, 0, w, h);
+    const blob = await canvasToBlob(tmp, "image/webp", 0.6);
+    if (blob) {
+      best = blob;
+      if (blob.size <= LIMIT) return blob;
+    }
+    scale *= 0.8;
+  }
+  return best;
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error("read failed"));
+    r.readAsDataURL(blob);
+  });
+}
+
+/* ---------------- small helpers ---------------- */
+
+function makeVisitorId() {
   try {
-    localStorage.setItem("mannat_typing_pb", JSON.stringify(obj));
-  } catch {}
+    if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  } catch {
+    /* ignore */
+  }
+  return `v_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function IlMedal({ rank }) {
-  if (rank === 1) return <span title="1st">🥇</span>;
-  if (rank === 2) return <span title="2nd">🥈</span>;
-  if (rank === 3) return <span title="3rd">🥉</span>;
-  return <span style={{ opacity: 0.85, fontWeight: 800, fontSize: 13 }}>{rank}</span>;
-}
+/* ---------------- icons ---------------- */
 
-function HowTitleSparkle() {
+const ic = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", "aria-hidden": true };
+const icStroke = { stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
+
+const IconBrush = () => (
+  <svg {...ic}>
+    <path d="M14 4l6 6-8 8H6v-6l8-8z" {...icStroke} />
+    <path d="M12 6l6 6" {...icStroke} />
+  </svg>
+);
+const IconGlow = () => (
+  <svg {...ic}>
+    <path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3z" {...icStroke} />
+    <path d="M19 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" {...icStroke} />
+  </svg>
+);
+const IconEraser = () => (
+  <svg {...ic}>
+    <path d="M7 17l-3-3a2 2 0 0 1 0-2.8l7-7a2 2 0 0 1 2.8 0l4 4a2 2 0 0 1 0 2.8L13 18H9l-2-1z" {...icStroke} />
+    <path d="M20 20H9" {...icStroke} />
+  </svg>
+);
+const IconBucket = () => (
+  <svg {...ic}>
+    <path d="M5 11l6-6 7 7-6 6a2 2 0 0 1-2.8 0L5 13.8A2 2 0 0 1 5 11z" {...icStroke} />
+    <path d="M9 5l-2-2" {...icStroke} />
+    <path d="M20 14c0 1.5-1.5 3-1.5 3s-1.5-1.5-1.5-3a1.5 1.5 0 0 1 3 0z" {...icStroke} />
+  </svg>
+);
+const IconText = () => (
+  <svg {...ic}>
+    <path d="M5 6h14M12 6v13M9 19h6" {...icStroke} />
+  </svg>
+);
+const IconLine = () => (
+  <svg {...ic}>
+    <path d="M5 19L19 5" {...icStroke} />
+  </svg>
+);
+const IconCurve = () => (
+  <svg {...ic}>
+    <path d="M4 18C8 6 16 18 20 6" {...icStroke} />
+  </svg>
+);
+const IconRect = () => (
+  <svg {...ic}>
+    <rect x="4" y="6" width="16" height="12" rx="1.5" {...icStroke} />
+  </svg>
+);
+const IconCircle = () => (
+  <svg {...ic}>
+    <circle cx="12" cy="12" r="8" {...icStroke} />
+  </svg>
+);
+const IconTriangle = () => (
+  <svg {...ic}>
+    <path d="M12 4l8 15H4l8-15z" {...icStroke} />
+  </svg>
+);
+const IconStar = () => (
+  <svg {...ic}>
+    <path d="M12 3l2.5 6.3L21 9.8l-5 4.3 1.6 6.4L12 17l-5.6 3.5L8 14.1l-5-4.3 6.5-.5L12 3z" {...icStroke} />
+  </svg>
+);
+const IconHeart = () => (
+  <svg {...ic}>
+    <path d="M12 20s-7-4.4-7-9.3A3.7 3.7 0 0 1 12 8a3.7 3.7 0 0 1 7-1.3C19 11.6 12 20 12 20z" {...icStroke} />
+  </svg>
+);
+const IconUndo = () => (
+  <svg {...ic}>
+    <path d="M9 7L4 12l5 5" {...icStroke} />
+    <path d="M4 12h11a5 5 0 0 1 0 10h-1" {...icStroke} />
+  </svg>
+);
+const IconRedo = () => (
+  <svg {...ic}>
+    <path d="M15 7l5 5-5 5" {...icStroke} />
+    <path d="M20 12H9a5 5 0 0 0 0 10h1" {...icStroke} />
+  </svg>
+);
+const IconTrash = () => (
+  <svg {...ic}>
+    <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" {...icStroke} />
+  </svg>
+);
+const IconDownload = () => (
+  <svg {...ic}>
+    <path d="M12 4v10m0 0l-4-4m4 4l4-4" {...icStroke} />
+    <path d="M4 18h16" {...icStroke} />
+  </svg>
+);
+const IconMirror = () => (
+  <svg {...ic}>
+    <path d="M12 3v18" {...icStroke} strokeDasharray="2 3" />
+    <path d="M9 7L4 12l5 5V7z" {...icStroke} />
+    <path d="M15 7l5 5-5 5V7z" {...icStroke} />
+  </svg>
+);
+const IconDroplet = () => (
+  <svg {...ic}>
+    <path d="M12 3s6 6.5 6 10.5a6 6 0 0 1-12 0C6 9.5 12 3 12 3z" {...icStroke} />
+  </svg>
+);
+const IconHelp = () => (
+  <svg {...ic}>
+    <circle cx="12" cy="12" r="9" {...icStroke} />
+    <path d="M9.5 9.2a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.1 2-2.1 3.5M12 17h.01" {...icStroke} />
+  </svg>
+);
+const IconSelect = () => (
+  <svg {...ic}>
+    <path d="M5 3l6 16 2-6 6-2L5 3z" {...icStroke} />
+  </svg>
+);
+const IconBringFront = () => (
+  <svg {...ic}>
+    <rect x="5" y="9" width="10" height="10" rx="1.5" {...icStroke} opacity="0.55" />
+    <rect x="9" y="5" width="10" height="10" rx="1.5" {...icStroke} />
+  </svg>
+);
+const IconSendBack = () => (
+  <svg {...ic}>
+    <rect x="9" y="5" width="10" height="10" rx="1.5" {...icStroke} opacity="0.55" />
+    <rect x="5" y="9" width="10" height="10" rx="1.5" {...icStroke} />
+  </svg>
+);
+const IconDeleteSel = () => (
+  <svg {...ic}>
+    <path d="M6 7h12M10 7V5h4v2M8 7l1 12h6l1-12" {...icStroke} />
+  </svg>
+);
+
+const TOOL_DEFS = [
+  { id: "select", label: "Select", Icon: IconSelect },
+  { id: "brush", label: "Brush", Icon: IconBrush },
+  { id: "glow", label: "Glow brush", Icon: IconGlow },
+  { id: "eraser", label: "Eraser", Icon: IconEraser },
+  { id: "fill", label: "Fill", Icon: IconBucket },
+  { id: "text", label: "Text", Icon: IconText },
+];
+const SHAPE_DEFS = [
+  { id: "line", label: "Line", Icon: IconLine },
+  { id: "curve", label: "Curve", Icon: IconCurve },
+  { id: "rect", label: "Rectangle", Icon: IconRect },
+  { id: "circle", label: "Circle", Icon: IconCircle },
+  { id: "triangle", label: "Triangle", Icon: IconTriangle },
+  { id: "star", label: "Star", Icon: IconStar },
+  { id: "heart", label: "Heart", Icon: IconHeart },
+];
+
+const HELP_ITEMS = [
+  { label: "Select", Icon: IconSelect },
+  { label: "Brush", Icon: IconBrush },
+  { label: "Glow brush", Icon: IconGlow },
+  { label: "Eraser", Icon: IconEraser },
+  { label: "Fill", Icon: IconBucket },
+  { label: "Text", Icon: IconText },
+  { label: "Line", Icon: IconLine },
+  { label: "Curve", Icon: IconCurve },
+  { label: "Rectangle", Icon: IconRect },
+  { label: "Circle", Icon: IconCircle },
+  { label: "Triangle", Icon: IconTriangle },
+  { label: "Star", Icon: IconStar },
+  { label: "Heart", Icon: IconHeart },
+  { label: "Small", text: "S" },
+  { label: "Medium", text: "M" },
+  { label: "Large", text: "L" },
+  { label: "Outline or Filled", Icon: IconDroplet },
+  { label: "Mirror", Icon: IconMirror },
+  { label: "Bring to front", Icon: IconBringFront },
+  { label: "Send to back", Icon: IconSendBack },
+  { label: "Delete selected", Icon: IconDeleteSel },
+  { label: "Undo", Icon: IconUndo },
+  { label: "Redo", Icon: IconRedo },
+  { label: "Clear", Icon: IconTrash },
+  { label: "Download WebP", Icon: IconDownload },
+];
+
+/* ---------------- reusable tool button with tooltip + long-press ---------------- */
+
+function ToolButton({ label, onActivate, active, disabled, children, style, extraStyle, className = "lym-tool-btn" }) {
+  const ref = useRef(null);
+  const [tip, setTip] = useState(null);
+  const hoverTimer = useRef(null);
+  const pressTimer = useRef(null);
+  const hideTimer = useRef(null);
+  const longPressed = useRef(false);
+  const blockScroll = useRef(null);
+
+  const show = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const tipW = 140;
+    const tipH = 36;
+    const preferBelow = r.top < tipH + 12 && window.innerHeight - r.bottom > r.top;
+    const left = Math.min(Math.max(r.left + r.width / 2, tipW / 2 + 8), window.innerWidth - tipW / 2 - 8);
+    setTip({
+      left,
+      top: preferBelow ? r.bottom + 8 : r.top - 8,
+      placement: preferBelow ? "below" : "above",
+    });
+  }, []);
+  const hide = useCallback(() => setTip(null), []);
+
+  const clearScrollBlock = useCallback(() => {
+    if (blockScroll.current) {
+      window.removeEventListener("touchmove", blockScroll.current, { capture: true });
+      blockScroll.current = null;
+    }
+  }, []);
+
+  useEffect(
+    () => () => {
+      clearTimeout(hoverTimer.current);
+      clearTimeout(pressTimer.current);
+      clearTimeout(hideTimer.current);
+      clearScrollBlock();
+    },
+    [clearScrollBlock]
+  );
+
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden style={{ flexShrink: 0 }}>
-      <defs>
-        <linearGradient id="il-how-sparkle-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#d8b4fe" />
-          <stop offset="0.45" stopColor="#e879f9" />
-          <stop offset="1" stopColor="#818cf8" />
-        </linearGradient>
-      </defs>
-      <path d="M12 2l1.2 4.2L18 8l-4.8 1.8L12 14l-1.2-4.2L6 8l4.8-1.8L12 2z" fill="url(#il-how-sparkle-grad)" />
-      <path
-        d="M19 15l.6 2.1 2.1.6-2.1.6-.6 2.1-.6-2.1-2.1-.6 2.1-.6.6-2.1z"
-        fill="url(#il-how-sparkle-grad)"
-        opacity="0.88"
-      />
-    </svg>
+    <>
+      <button
+        ref={ref}
+        type="button"
+        aria-label={label}
+        aria-pressed={active ? true : undefined}
+        disabled={disabled}
+        className={className}
+        style={{ ...style, ...(active ? extraStyle : null), touchAction: "manipulation", userSelect: "none", WebkitUserSelect: "none" }}
+        onClick={() => {
+          if (disabled) return;
+          if (longPressed.current) {
+            longPressed.current = false;
+            return;
+          }
+          onActivate && onActivate();
+        }}
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse") {
+            clearTimeout(hoverTimer.current);
+            hoverTimer.current = setTimeout(show, 300);
+          }
+        }}
+        onPointerLeave={() => {
+          clearTimeout(hoverTimer.current);
+          clearTimeout(pressTimer.current);
+          clearScrollBlock();
+          hide();
+        }}
+        onFocus={show}
+        onBlur={hide}
+        onPointerDown={(e) => {
+          longPressed.current = false;
+          if (e.pointerType === "touch") {
+            // Block page scroll while the finger is held (long-press must not scroll).
+            clearScrollBlock();
+            blockScroll.current = (ev) => {
+              ev.preventDefault();
+            };
+            window.addEventListener("touchmove", blockScroll.current, { passive: false, capture: true });
+            clearTimeout(pressTimer.current);
+            pressTimer.current = setTimeout(() => {
+              longPressed.current = true;
+              show();
+              clearTimeout(hideTimer.current);
+              hideTimer.current = setTimeout(hide, 1500);
+            }, 400);
+          }
+        }}
+        onPointerUp={() => {
+          clearTimeout(pressTimer.current);
+          clearScrollBlock();
+        }}
+        onPointerCancel={() => {
+          clearTimeout(pressTimer.current);
+          clearScrollBlock();
+          longPressed.current = false;
+        }}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {children}
+      </button>
+      {tip ? (
+        <div
+          className="lym-tooltip"
+          role="tooltip"
+          data-placement={tip.placement}
+          style={{ left: tip.left, top: tip.top, transform: `translate(-50%, ${tip.placement === "above" ? "-100%" : "0"})` }}
+        >
+          {label}
+        </div>
+      ) : null}
+    </>
   );
 }
 
-function HowIconUser() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 11.5a3.5 3.5 0 1 0-3.5-3.5 3.5 3.5 0 0 0 3.5 3.5zM4.5 21a7.5 7.5 0 0 1 15 0"
-        stroke="rgba(248,250,252,0.92)"
-        strokeWidth="1.45"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function HowIconBolt() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"
-        stroke="rgba(248,250,252,0.92)"
-        strokeWidth="1.45"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function HowIconChart() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M4 19V5M4 19h16" stroke="rgba(148,163,184,0.5)" strokeWidth="1.25" strokeLinecap="round" />
-      <path
-        d="M7 15l4-5 3 3 5-7"
-        stroke="rgba(248,250,252,0.9)"
-        strokeWidth="1.45"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function HowIconTrophy() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M8 21h8M12 17v4M6 4h12v3a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V4zM6 7H4a2 2 0 0 0 2 2m12-2h2a2 2 0 0 1-2 2"
-        stroke="rgba(248,250,252,0.9)"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-const DURATION = 30;
-const LB_CACHE_KEY = "mannat_il_lb_v1";
-
-const ils = {
-  root: {
-    marginTop: 0,
-    padding: "0 0 clamp(14px, 2vw, 20px)",
-    borderRadius: 0,
-    overflow: "visible",
-    isolation: "auto",
-    background: "transparent",
-    border: "none",
-    boxShadow: "none",
-    backdropFilter: "none",
-    WebkitBackdropFilter: "none",
-  },
+const gs = {
+  root: { marginTop: 0, padding: "0 0 clamp(14px, 2vw, 20px)", background: "transparent", border: "none" },
   headerRow: {
     display: "flex",
     flexDirection: "row",
@@ -129,586 +849,61 @@ const ils = {
     padding: "clamp(14px, 2.4vw, 20px) clamp(16px, 3vw, 24px) clamp(10px, 1.8vw, 14px)",
     flexWrap: "wrap",
   },
-  headerRowStacked: {
-    flexDirection: "column",
-    alignItems: "stretch",
-    gap: 12,
-  },
   titleBlock: { flex: "1 1 280px", minWidth: 0 },
-  titleLine: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-  beakerWrap: {
-    padding: 1,
-    borderRadius: 12,
-    background: "linear-gradient(135deg, #d946ef, #9333ea, #6366f1)",
-    flexShrink: 0,
-  },
-  beakerInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 11,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(180deg, #0b1224, #070b14)",
-  },
-  h1: {
-    margin: 0,
-    fontSize: "clamp(1.05rem, 2vw, 1.35rem)",
-    fontWeight: 850,
-    letterSpacing: "0.12em",
-    color: "rgba(248, 250, 252, 0.98)",
-  },
-  h1Grad: {
-    background: "linear-gradient(92deg, #d8b4fe, #e879f9, #a78bfa, #818cf8)",
-    WebkitBackgroundClip: "text",
-    backgroundClip: "text",
-    color: "transparent",
-    WebkitTextFillColor: "transparent",
-  },
-  sub: {
-    margin: "8px 0 0",
-    fontSize: 13,
-    lineHeight: 1.55,
-    fontWeight: 500,
-    color: "rgba(148, 163, 184, 0.9)",
-    maxWidth: 520,
-  },
-  aboutBtn: {
-    flexShrink: 0,
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "8px 12px",
-    borderRadius: 999,
-    border: "1px solid rgba(167, 139, 250, 0.35)",
-    background: "rgba(15, 23, 42, 0.45)",
-    color: "rgba(226, 232, 240, 0.92)",
-    fontSize: 12,
-    fontWeight: 650,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  aboutBtnMobile: {
-    width: "100%",
-    justifyContent: "center",
-    minHeight: 44,
-    boxSizing: "border-box",
-  },
-  aboutPanel: {
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 12,
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    background: "rgba(255,255,255,0.03)",
-    color: "rgba(148, 163, 184, 0.95)",
-    fontSize: 12.5,
-    lineHeight: 1.55,
-    maxWidth: 420,
-  },
-  labShellGrid: {
-    display: "grid",
-    gap: 18,
-    padding: "clamp(14px, 2.5vw, 22px) clamp(16px, 3vw, 24px) 8px",
-    alignItems: "start",
-    width: "100%",
-    maxWidth: "100%",
-    boxSizing: "border-box",
-  },
-  labShellWide: {
-    gridTemplateColumns: "minmax(0, 1.15fr) minmax(260px, 0.85fr)",
-    gridTemplateAreas: '"game lb" "how lb" "tip lb"',
-  },
-  labShellStacked: {
-    gridTemplateColumns: "minmax(0, 1fr)",
-    gridTemplateAreas: '"game" "lb" "how" "tip"',
-  },
-  gameCard: {
-    position: "relative",
-    borderRadius: 16,
-    padding: "clamp(18px, 2.5vw, 24px)",
-    overflow: "hidden",
-    background: "rgba(255, 255, 255, 0.03)",
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.28)",
-  },
-  arcGlow: {
-    position: "absolute",
-    pointerEvents: "none",
-    bottom: "-40%",
-    left: "-20%",
-    width: "120%",
-    height: "80%",
-    background: "radial-gradient(ellipse at 50% 0%, rgba(168, 85, 247, 0.12), transparent 60%)",
-    opacity: 0.9,
-  },
-  tabPill: {
-    position: "relative",
-    zIndex: 1,
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "6px 11px",
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: 750,
-    letterSpacing: "0.06em",
-    color: "rgba(226, 232, 240, 0.9)",
-    border: "1px solid rgba(59, 130, 246, 0.25)",
-    background: "rgba(15, 23, 42, 0.55)",
-    marginBottom: 14,
-  },
-  heroTitle: {
-    position: "relative",
-    zIndex: 1,
-    margin: 0,
-    fontSize: "clamp(1.35rem, 2.4vw, 1.75rem)",
-    fontWeight: 800,
-    letterSpacing: "-0.02em",
-    color: "rgba(248, 250, 252, 0.98)",
-    lineHeight: 1.2,
-  },
-  heroSub: {
-    position: "relative",
-    zIndex: 1,
-    margin: "10px 0 0",
-    fontSize: 14,
-    lineHeight: 1.55,
-    color: "rgba(148, 163, 184, 0.92)",
-    maxWidth: 460,
-  },
-  strongHi: { color: "rgba(251, 207, 232, 0.95)", fontWeight: 700 },
-  nameRow: {
-    position: "relative",
-    zIndex: 1,
-    marginTop: 18,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "4px 4px 4px 12px",
-    borderRadius: 14,
-    border: "1px solid rgba(51, 65, 107, 0.45)",
-    background: "rgba(15, 23, 42, 0.5)",
-  },
-  nameRowStacked: {
-    padding: "10px 12px",
-    flexWrap: "wrap",
-  },
-  nameInput: {
-    flex: 1,
-    minWidth: 0,
-    border: "none",
-    outline: "none",
-    background: "transparent",
-    color: "rgba(248, 250, 252, 0.96)",
-    fontSize: 16,
-    fontWeight: 600,
-    padding: "10px 4px",
-    fontFamily: "inherit",
-  },
-  startBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    marginTop: 18,
-    padding: "14px 22px",
-    borderRadius: 999,
-    border: "none",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    fontWeight: 780,
-    fontSize: 15,
-    color: "#fff",
-    background: "linear-gradient(135deg, #d946ef, #9333ea, #6366f1)",
-    backgroundSize: "140% 140%",
-    boxShadow:
-      "0 10px 28px rgba(91, 33, 182, 0.38), 0 0 18px rgba(217, 70, 239, 0.14), inset 0 1px 0 rgba(255,255,255,0.12)",
-  },
-  startBtnFull: {
-    width: "100%",
-    boxSizing: "border-box",
-    minHeight: 48,
-    marginTop: 14,
-  },
-  infoRow: {
-    position: "relative",
-    zIndex: 1,
-    marginTop: 18,
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 10,
-  },
-  infoRowMob: { gridTemplateColumns: "1fr" },
-  infoCard: {
-    borderRadius: 14,
-    padding: "12px 10px",
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    background: "rgba(255,255,255,0.02)",
-    textAlign: "center",
-  },
-  infoCardLabel: { fontSize: 13, fontWeight: 800, color: "rgba(248, 250, 252, 0.95)" },
-  infoCardSub: { marginTop: 4, fontSize: 11, color: "rgba(148, 163, 184, 0.85)", fontWeight: 600 },
-  playArea: { position: "relative", zIndex: 1, marginTop: 8 },
-  timerCard: {
-    borderRadius: 14,
-    padding: 14,
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    background: "linear-gradient(180deg, rgba(15, 23, 42, 0.85), rgba(7, 11, 20, 0.92))",
-    marginBottom: 12,
-  },
-  timerTop: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 },
-  timerNum: { fontSize: 28, fontWeight: 900, color: "rgba(248, 250, 252, 0.98)" },
-  timerLbl: { fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", color: "rgba(148, 163, 184, 0.85)" },
-  barOuter: { marginTop: 10, height: 8, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" },
-  barInner: {
-    height: "100%",
-    borderRadius: 999,
-    background: "linear-gradient(90deg, #7c3aed, #f472b6)",
-    transition: "width 80ms linear",
-  },
-  targetBox: {
-    borderRadius: 14,
-    padding: 14,
-    minHeight: 100,
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    background: "rgba(3, 6, 14, 0.92)",
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
-    fontSize: "clamp(13px, 3.8vw, 15px)",
-    lineHeight: 1.55,
-    color: "rgba(226, 232, 240, 0.95)",
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-  },
-  typeArea: {
-    marginTop: 12,
-    borderRadius: 14,
-    padding: 12,
-    border: "1px solid rgba(167, 139, 250, 0.22)",
-    background: "rgba(255,255,255,0.02)",
-  },
-  textarea: {
-    width: "100%",
-    minHeight: 120,
-    maxWidth: "100%",
-    boxSizing: "border-box",
-    borderRadius: 12,
-    border: "1px solid rgba(51, 65, 107, 0.4)",
-    padding: 12,
-    outline: "none",
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    fontSize: 16,
-    fontWeight: 600,
-    color: "rgba(248, 250, 252, 0.96)",
-    background: "rgba(15, 23, 42, 0.55)",
-    resize: "vertical",
-  },
-  resultsCard: {
-    borderRadius: 16,
-    padding: 18,
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    background: "rgba(255,255,255,0.03)",
-  },
-  resultsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 12,
-    marginTop: 12,
-  },
-  resultsGridStacked: {
-    gridTemplateColumns: "1fr",
-  },
-  statCell: {
-    borderRadius: 12,
-    padding: 12,
-    border: "1px solid rgba(51, 65, 107, 0.3)",
-    background: "rgba(15, 23, 42, 0.35)",
-  },
-  statLabel: { fontSize: 11, fontWeight: 700, color: "rgba(148, 163, 184, 0.9)", letterSpacing: "0.06em" },
-  statVal: { marginTop: 6, fontSize: 22, fontWeight: 900, color: "rgba(248, 250, 252, 0.98)" },
-  msgLine: { marginTop: 14, fontSize: 14, fontWeight: 700, color: "rgba(251, 207, 232, 0.95)" },
-  secondaryBtn: {
-    marginTop: 14,
-    padding: "12px 18px",
-    borderRadius: 999,
-    border: "1px solid rgba(167, 139, 250, 0.35)",
-    background: "rgba(15, 23, 42, 0.5)",
-    color: "rgba(248, 250, 252, 0.95)",
-    fontWeight: 750,
-    fontSize: 14,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  howCard: {
-    borderRadius: 16,
-    padding: "18px 16px 20px",
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    background: "rgba(255,255,255,0.02)",
-    overflow: "hidden",
-  },
-  howTitle: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    fontWeight: 800,
-    fontSize: 14,
-    color: "rgba(248, 250, 252, 0.96)",
-    marginBottom: 18,
-  },
-  howSteps: {
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "nowrap",
-    alignItems: "stretch",
-    justifyContent: "space-between",
-    gap: 2,
-    width: "100%",
-    overflowX: "auto",
-    WebkitOverflowScrolling: "touch",
-    paddingBottom: 4,
-    scrollbarWidth: "thin",
-  },
-  howStepsStacked: {
-    flexDirection: "column",
-    flexWrap: "nowrap",
-    overflowX: "visible",
-    gap: 14,
-    paddingBottom: 0,
-    alignItems: "stretch",
-  },
-  howStep: {
-    flex: "1 1 0",
-    minWidth: 108,
-    maxWidth: 200,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-    gap: 10,
-    padding: "4px 4px 0",
-  },
-  howStepStacked: {
-    flex: "none",
-    minWidth: 0,
-    maxWidth: "none",
-    width: "100%",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    textAlign: "left",
-    gap: 8,
-    padding: "12px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(51, 65, 107, 0.28)",
-    background: "rgba(15, 23, 42, 0.35)",
-    boxSizing: "border-box",
-  },
-  howIconRing: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    background: "rgba(15, 23, 42, 0.75)",
-    border: "1px solid rgba(59, 130, 246, 0.2)",
-  },
-  howStepTitle: {
-    fontSize: 12.5,
-    fontWeight: 800,
-    color: "rgba(248, 250, 252, 0.96)",
-    letterSpacing: "-0.01em",
-    lineHeight: 1.25,
-  },
-  howStepBody: {
-    fontSize: 10.5,
-    lineHeight: 1.45,
-    color: "rgba(148, 163, 184, 0.88)",
-    maxWidth: 168,
-    margin: "0 auto",
-  },
-  howStepBodyStacked: {
-    maxWidth: "none",
-    margin: 0,
-    fontSize: 12,
-    flex: 1,
-    minWidth: 0,
-  },
-  howChev: {
-    flexShrink: 0,
-    alignSelf: "center",
-    color: "rgba(100, 116, 139, 0.5)",
-    fontSize: 20,
-    fontWeight: 200,
-    lineHeight: 1,
-    padding: "0 4px",
-    marginTop: 10,
-    userSelect: "none",
-  },
-  howChevStacked: {
-    display: "none",
-  },
-  tipBar: {
-    borderRadius: 12,
-    padding: "10px 14px",
-    border: "1px solid rgba(51, 65, 107, 0.3)",
-    background: "rgba(15, 23, 42, 0.35)",
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    fontSize: 12,
-    color: "rgba(148, 163, 184, 0.95)",
-    lineHeight: 1.45,
-  },
-  lbCard: {
-    borderRadius: 16,
-    padding: 16,
-    border: "1px solid rgba(51, 65, 107, 0.35)",
-    background: "rgba(255, 255, 255, 0.03)",
-    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
-    position: "sticky",
-    top: 12,
-    minWidth: 0,
-    maxWidth: "100%",
-    boxSizing: "border-box",
-  },
-  lbHead: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" },
-  lbTitle: { fontWeight: 900, fontSize: 13, letterSpacing: "0.14em", color: "rgba(248, 250, 252, 0.95)" },
-  lbSelect: {
-    fontSize: 11,
-    fontWeight: 700,
-    padding: "6px 10px",
-    borderRadius: 10,
-    border: "1px solid rgba(51, 65, 107, 0.45)",
-    background: "rgba(15, 23, 42, 0.55)",
-    color: "rgba(226, 232, 240, 0.9)",
-    fontFamily: "inherit",
-  },
-  lbWarn: {
-    marginTop: 10,
-    padding: "8px 10px",
-    borderRadius: 10,
-    fontSize: 12,
-    lineHeight: 1.45,
-    color: "rgba(253, 224, 71, 0.95)",
-    background: "rgba(113, 63, 18, 0.25)",
-    border: "1px solid rgba(250, 204, 21, 0.22)",
-  },
-  lbRetryRow: { marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" },
-  lbRetryBtn: {
-    padding: "6px 12px",
-    borderRadius: 999,
-    border: "1px solid rgba(167, 139, 250, 0.4)",
-    background: "rgba(15, 23, 42, 0.55)",
-    color: "rgba(248, 250, 252, 0.95)",
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  lbRow: {
-    display: "grid",
-    gridTemplateColumns: "44px 40px 1fr auto",
-    gap: 8,
-    alignItems: "center",
-    padding: "10px 8px",
-    borderRadius: 12,
-    border: "1px solid rgba(51, 65, 107, 0.22)",
-    marginTop: 8,
-    background: "rgba(15, 23, 42, 0.25)",
-    minWidth: 0,
-  },
-  lbRowMobile: {
-    gridTemplateColumns: "36px 32px minmax(0, 1fr) auto",
-    gap: 6,
-    padding: "10px 6px",
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 12,
-    fontWeight: 900,
-    background: "linear-gradient(135deg, rgba(99,102,241,0.35), rgba(217,70,239,0.25))",
-    color: "rgba(248, 250, 252, 0.95)",
-    border: "1px solid rgba(167, 139, 250, 0.25)",
-  },
-  lbName: { fontWeight: 800, fontSize: 13, color: "rgba(248, 250, 252, 0.95)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  lbWpm: { fontWeight: 900, fontSize: 14, color: "rgba(248, 250, 252, 0.98)", textAlign: "right" },
-  lbAcc: { fontSize: 11, color: "rgba(148, 163, 184, 0.88)", textAlign: "right" },
-  yourBest: {
-    marginTop: 14,
-    padding: 12,
-    borderRadius: 12,
-    border: "1px solid rgba(217, 70, 239, 0.25)",
-    background: "rgba(15, 23, 42, 0.45)",
-  },
-  yourBestTitle: { fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(251, 207, 232, 0.9)" },
-  yourBestBody: { marginTop: 6, fontSize: 13, fontWeight: 750, color: "rgba(248, 250, 252, 0.95)" },
+  titleLine: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
+  markWrap: { padding: 1, borderRadius: 12, background: "linear-gradient(135deg, #d946ef, #9333ea, #6366f1)", flexShrink: 0 },
+  markInner: { width: 40, height: 40, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg, #0b1224, #070b14)" },
+  h1: { margin: 0, fontSize: "clamp(1.05rem, 2vw, 1.35rem)", fontWeight: 850, letterSpacing: "0.12em", color: "rgba(248, 250, 252, 0.98)" },
+  h1Grad: { background: "linear-gradient(92deg, #d8b4fe, #e879f9, #a78bfa, #818cf8)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent" },
+  sub: { margin: "8px 0 0", fontSize: 13, lineHeight: 1.55, fontWeight: 500, color: "rgba(148, 163, 184, 0.9)", maxWidth: 520 },
+  shellGrid: { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 18, padding: "clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px) 8px", alignItems: "start", width: "100%", boxSizing: "border-box" },
+  card: { position: "relative", borderRadius: 16, padding: "clamp(16px, 2.4vw, 22px)", overflow: "hidden", background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(51, 65, 107, 0.35)", boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.28)", minWidth: 0 },
+  arcGlow: { position: "absolute", pointerEvents: "none", top: "-40%", right: "-20%", width: "90%", height: "70%", background: "radial-gradient(ellipse at 50% 0%, rgba(217, 70, 239, 0.12), transparent 60%)" },
+  tabPill: { position: "relative", zIndex: 1, display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 11px", borderRadius: 999, fontSize: 11, fontWeight: 750, letterSpacing: "0.06em", color: "rgba(226, 232, 240, 0.9)", border: "1px solid rgba(217, 70, 239, 0.25)", background: "rgba(15, 23, 42, 0.55)", marginBottom: 14 },
+  canvasFrame: { position: "relative", zIndex: 1, borderRadius: 14, padding: 6, background: "linear-gradient(135deg, rgba(217,70,239,0.25), rgba(99,102,241,0.18))", border: "1px solid rgba(167, 139, 250, 0.22)" },
+  canvas: { display: "block", width: "100%", height: "auto", aspectRatio: `${CANVAS_W} / ${CANVAS_H}`, borderRadius: 10, background: CANVAS_BG, touchAction: "none", cursor: "crosshair" },
+  toolbar: { position: "relative", zIndex: 1, marginTop: 14, display: "flex", flexDirection: "column", gap: 10 },
+  toolRow: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  toolBtn: { width: 36, height: 32, borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(203, 213, 225, 0.85)", border: "1px solid rgba(51, 65, 107, 0.5)", background: "rgba(15, 23, 42, 0.55)", fontFamily: "inherit", padding: 0 },
+  toolBtnActive: { borderColor: "rgba(217, 70, 239, 0.65)", background: "rgba(217, 70, 239, 0.16)", color: "#fff", boxShadow: "0 0 14px rgba(217,70,239,0.25)" },
+  sep: { width: 1, height: 24, background: "rgba(51, 65, 107, 0.55)", flexShrink: 0, margin: "0 2px" },
+  swatchRow: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  swatch: { width: 26, height: 26, borderRadius: 999, cursor: "pointer", border: "2px solid transparent", padding: 0, outline: "none", transition: "transform 120ms ease, box-shadow 120ms ease" },
+  swatchActive: { transform: "scale(1.18)", boxShadow: "0 0 0 2px rgba(255,255,255,0.9)" },
+  brushBtn: { width: 34, height: 30, borderRadius: 9, cursor: "pointer", fontFamily: "inherit", fontWeight: 800, fontSize: 12, color: "rgba(226, 232, 240, 0.9)", border: "1px solid rgba(51, 65, 107, 0.5)", background: "rgba(15, 23, 42, 0.55)" },
+  brushBtnActive: { borderColor: "rgba(217, 70, 239, 0.6)", background: "rgba(217, 70, 239, 0.14)", color: "#fff" },
+  toggle: { display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12, color: "rgba(203, 213, 225, 0.85)", border: "1px solid rgba(51, 65, 107, 0.5)", background: "rgba(15, 23, 42, 0.55)" },
+  toggleActive: { borderColor: "rgba(217, 70, 239, 0.65)", background: "rgba(217, 70, 239, 0.16)", color: "#fff" },
+  iconBtn: { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12, color: "rgba(226, 232, 240, 0.9)", border: "1px solid rgba(51, 65, 107, 0.5)", background: "rgba(15, 23, 42, 0.55)" },
+  fieldRow: { position: "relative", zIndex: 1, marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" },
+  field: { flex: "1 1 200px", minWidth: 0 },
+  fieldLabel: { display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "rgba(148, 163, 184, 0.85)", marginBottom: 6 },
+  input: { width: "100%", boxSizing: "border-box", borderRadius: 12, border: "1px solid rgba(51, 65, 107, 0.45)", padding: "12px 12px", outline: "none", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: "rgba(248, 250, 252, 0.96)", background: "rgba(15, 23, 42, 0.55)" },
+  honeypot: { position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0, pointerEvents: "none" },
+  submitRow: { position: "relative", zIndex: 1, marginTop: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
+  submitBtn: { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "13px 22px", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 780, fontSize: 15, color: "#fff", background: "linear-gradient(135deg, #d946ef, #9333ea, #6366f1)", boxShadow: "0 10px 28px rgba(91, 33, 182, 0.38), 0 0 18px rgba(217, 70, 239, 0.14), inset 0 1px 0 rgba(255,255,255,0.12)", width: "100%", boxSizing: "border-box", minHeight: 48 },
+  submitBtnDisabled: { opacity: 0.6, cursor: "not-allowed", filter: "grayscale(0.2)" },
+  msgErr: { fontSize: 13, fontWeight: 650, color: "rgba(251, 113, 133, 0.95)" },
+  msgOk: { fontSize: 13, fontWeight: 700, color: "rgba(134, 239, 172, 0.95)" },
 };
 
-function cleanTyping(s) {
-  return (s || "")
-    .replace(/\r\n/g, "\n")
-    .toLowerCase()
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'[\]\\|<>@+]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function computeTypingStats(finalTyped, targetText, elapsedSeconds) {
-  const rawTyped = (finalTyped || "").replace(/\r\n/g, "\n");
-  const elapsed = Math.max(0.001, elapsedSeconds || DURATION);
-  const minutes = elapsed / 60;
-  const typedChars = rawTyped.length;
-  const t = cleanTyping(rawTyped);
-  const tar = cleanTyping(targetText);
-  let correct = 0;
-  const n = Math.min(t.length, tar.length);
-  for (let i = 0; i < n; i++) if (t[i] === tar[i]) correct++;
-  const typedForAcc = t.length;
-  const accuracy = typedForAcc === 0 ? 0 : Math.round((correct / typedForAcc) * 100);
-  const grossWpm = typedChars === 0 ? 0 : Math.round((typedChars / 5) / minutes);
-  const netWpm = Math.max(0, Math.round(grossWpm * (accuracy / 100)));
-  return { grossWpm, netWpm, accuracy };
-}
-
-export function InteractiveLabSection({ apiBase }) {
-  const sentences = useMemo(
-    () => [
-      "Write tests like your future self will thank you.",
-      "Fast feedback saves hours of debugging later.",
-      "Make small incremental changes and validate often.",
-      "Readable code is maintainable code.",
-      "Ship small learn fast and iterate with confidence.",
-      "Quality is the result of deliberate attention to detail.",
-      "A bug fixed early is a feature delivered on time.",
-      "Good interfaces feel obvious once they exist.",
-    ],
-    []
+function TitleSparkle() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden style={{ opacity: 0.9 }}>
+      <path d="M12 2l1.2 4.2L18 8l-4.8 1.8L12 14l-1.2-4.2L6 8l4.8-1.8L12 2z" fill="rgba(244, 114, 182, 0.85)" />
+    </svg>
   );
-
-  const [layout, setLayout] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(max-width: 1024px)").matches ? "stacked" : "wide"
+}
+function PenMark() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M4 20l1-4 10-10 3 3-10 10-4 1z" stroke="rgba(226,232,240,0.9)" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M14 6l3 3" stroke="rgba(147,197,253,0.6)" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
   );
-
-  useEffect(() => {
-    const q = window.matchMedia("(max-width: 1024px)");
-    const fn = () => setLayout(q.matches ? "stacked" : "wide");
-    fn();
-    q.addEventListener("change", fn);
-    return () => q.removeEventListener("change", fn);
-  }, []);
-
-  const [phase, setPhase] = useState("intro");
-  const [aboutOpen, setAboutOpen] = useState(false);
+}
+export function InteractiveLabSection({ apiBase = API_BASE }) {
+  // ---- form state ----
   const [name, setName] = useState(() => {
     try {
       return localStorage.getItem("mannat_player_name") || "";
@@ -716,548 +911,992 @@ export function InteractiveLabSection({ apiBase }) {
       return "";
     }
   });
+  const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formErr, setFormErr] = useState("");
+  const [formOk, setFormOk] = useState("");
 
-  const [target, setTarget] = useState("");
-  const [typed, setTyped] = useState("");
-  const [running, setRunning] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(DURATION);
-  const [results, setResults] = useState(null);
-  const [madeLeaderboard, setMadeLeaderboard] = useState(null);
+  // ---- tool state ----
+  const [tool, setTool] = useState("brush");
+  const [color, setColor] = useState(PALETTE[0]);
+  const [brush, setBrush] = useState(BRUSHES[1].size);
+  const [fillShapes, setFillShapes] = useState(false);
+  const [mirror, setMirror] = useState(false);
+  const [textFont, setTextFont] = useState(FONTS[0].name);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
+  const [announce, setAnnounce] = useState("Brush");
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [textEdit, setTextEdit] = useState(null);
+  const [selectedIdx, setSelectedIdx] = useState(null);
 
-  const [lbRows, setLbRows] = useState([]);
-  const [lbStatus, setLbStatus] = useState("idle");
-  const [lbErr, setLbErr] = useState("");
-  const [lbWarn, setLbWarn] = useState("");
-  const [pbMap, setPbMap] = useState(() => loadPB());
-
-  const typedRef = useRef("");
-  const targetRef = useRef("");
-  const startRef = useRef(0);
-  const rafRef = useRef(null);
-  const stoppingRef = useRef(false);
-  const inputRef = useRef(null);
+  // ---- canvas engine refs ----
+  const canvasRef = useRef(null);
+  const frameRef = useRef(null);
+  const textInputRef = useRef(null);
+  const ctxRef = useRef(null);
+  const baselineRef = useRef(null);
+  const bakedRef = useRef(false);
+  const opsRef = useRef([]);
+  const redoRef = useRef([]);
+  const drawingRef = useRef(false);
+  const curOpRef = useRef(null);
+  // Full-canvas snapshot taken right before Clear, so Undo can restore it.
+  const preClearSnapRef = useRef(null);
+  // After undoing a Clear, Redo should clear again.
+  const pendingClearRedoRef = useRef(false);
+  // Select-tool edits (move / resize / delete / z-order).
+  const editUndoRef = useRef([]);
+  const editRedoRef = useRef([]);
+  const selectDragRef = useRef(null);
+  const selectedIdxRef = useRef(null);
 
   useEffect(() => {
-    typedRef.current = typed;
-  }, [typed]);
-  useEffect(() => {
-    targetRef.current = target;
-  }, [target]);
+    selectedIdxRef.current = selectedIdx;
+  }, [selectedIdx]);
 
-  const fetchLeaderboard = useCallback(async () => {
-    setLbStatus("loading");
-    setLbErr("");
-    setLbWarn("");
-    const url = `${apiBase}/api/typing-scores?duration=${DURATION}`;
-    try {
-      const res = await fetch(url);
-      const text = await res.text();
-      let data = {};
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error("Unexpected response from server (not JSON).");
-      }
-      if (!res.ok) throw new Error(data?.error || `Server error (${res.status})`);
-      const top = Array.isArray(data.top) ? data.top : [];
-      setLbRows(top);
-      setLbStatus("ok");
-      try {
-        sessionStorage.setItem(LB_CACHE_KEY, JSON.stringify({ at: Date.now(), top }));
-      } catch {
-        /* ignore */
-      }
-    } catch (e) {
-      const rawMsg = e?.message || String(e);
-      const isNetwork =
-        rawMsg === "Failed to fetch" ||
-        rawMsg.includes("NetworkError") ||
-        rawMsg.includes("Load failed") ||
-        (typeof TypeError !== "undefined" && e instanceof TypeError);
+  const syncState = useCallback(() => {
+    setCanUndo(opsRef.current.length > 0 || !!preClearSnapRef.current || editUndoRef.current.length > 0);
+    setCanRedo(redoRef.current.length > 0 || !!pendingClearRedoRef.current || editRedoRef.current.length > 0);
+    setHasContent(opsRef.current.length > 0 || bakedRef.current);
+  }, []);
 
-      let usedCache = false;
-      try {
-        const cached = sessionStorage.getItem(LB_CACHE_KEY);
-        if (cached) {
-          const { top } = JSON.parse(cached);
-          if (Array.isArray(top) && top.length > 0) {
-            setLbRows(top);
-            setLbStatus("ok");
-            setLbWarn(
-              isNetwork
-                ? "Showing saved rankings — could not reach the API (is it running on port 3001?)."
-                : "Showing saved rankings — could not refresh from the server."
-            );
-            usedCache = true;
-          }
+  const redrawAll = useCallback((opts = {}) => {
+    const showSelection = opts.showSelection !== false;
+    const ctx = ctxRef.current;
+    if (!ctx || !baselineRef.current) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.drawImage(baselineRef.current, 0, 0);
+    for (const op of opsRef.current) renderOp(ctx, op);
+    if (showSelection && selectedIdxRef.current != null) {
+      const op = opsRef.current[selectedIdxRef.current];
+      if (op && isSelectable(op)) {
+        const box = opBBox(op, ctx);
+        drawSelectionOverlay(ctx, box);
+      }
+    }
+  }, []);
+
+  const cloneBaseline = useCallback(() => {
+    const src = baselineRef.current;
+    const c = document.createElement("canvas");
+    c.width = CANVAS_W;
+    c.height = CANVAS_H;
+    c.getContext("2d").drawImage(src, 0, 0);
+    return c;
+  }, []);
+
+  const resetBaselineEmpty = useCallback(() => {
+    const bctx = baselineRef.current.getContext("2d", { willReadFrequently: true });
+    bctx.setTransform(1, 0, 0, 1, 0, 0);
+    bctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    paintBackground(bctx);
+  }, []);
+
+  const bakeOldest = useCallback(() => {
+    const bctx = baselineRef.current.getContext("2d", { willReadFrequently: true });
+    const op = opsRef.current.shift();
+    if (op) {
+      renderOp(bctx, op);
+      bakedRef.current = true;
+    }
+  }, []);
+
+  const pushEdit = useCallback(
+    (entry) => {
+      editUndoRef.current.push(entry);
+      if (editUndoRef.current.length > HISTORY_CAP) editUndoRef.current.shift();
+      editRedoRef.current = [];
+      pendingClearRedoRef.current = false;
+      preClearSnapRef.current = null;
+      redoRef.current = [];
+      syncState();
+    },
+    [syncState]
+  );
+
+  const applyEdit = useCallback(
+    (entry, direction) => {
+      if (!entry) return;
+      let nextSel = selectedIdxRef.current;
+      if (entry.kind === "patch") {
+        const op = direction === "undo" ? entry.before : entry.after;
+        opsRef.current[entry.index] = cloneOp(op);
+        nextSel = entry.index;
+      } else if (entry.kind === "delete") {
+        if (direction === "undo") {
+          opsRef.current.splice(entry.index, 0, cloneOp(entry.op));
+          nextSel = entry.index;
+        } else {
+          opsRef.current.splice(entry.index, 1);
+          nextSel = null;
         }
-      } catch {
-        /* ignore */
+      } else if (entry.kind === "reorder") {
+        const order = direction === "undo" ? entry.before : entry.after;
+        opsRef.current = order.map(cloneOp);
+        nextSel = direction === "undo" ? entry.selectBefore : entry.selectAfter;
       }
+      selectedIdxRef.current = nextSel;
+      setSelectedIdx(nextSel);
+      redrawAll();
+      syncState();
+    },
+    [redrawAll, syncState]
+  );
 
-      if (!usedCache) {
-        setLbStatus("err");
-        setLbErr(
-          isNetwork
-            ? `Cannot reach ${apiBase}. Run mannat-portfolio-api with MongoDB, or set VITE_API_BASE in .env to your live API URL (https if your site is https).`
-            : rawMsg
-        );
+  const commit = useCallback(
+    (op) => {
+      // New strokes replace a pending "redo clear" / select edits.
+      pendingClearRedoRef.current = false;
+      preClearSnapRef.current = null;
+      editUndoRef.current = [];
+      editRedoRef.current = [];
+      selectedIdxRef.current = null;
+      setSelectedIdx(null);
+      selectDragRef.current = null;
+      opsRef.current.push(op);
+      redoRef.current = [];
+      while (opsRef.current.length > HISTORY_CAP) bakeOldest();
+      redrawAll();
+      syncState();
+    },
+    [bakeOldest, redrawAll, syncState]
+  );
+
+  const undo = useCallback(() => {
+    if (editUndoRef.current.length > 0) {
+      const entry = editUndoRef.current.pop();
+      editRedoRef.current.push(entry);
+      applyEdit(entry, "undo");
+      return;
+    }
+    // Undo an accidental Clear first (restores full canvas including text).
+    if (opsRef.current.length === 0 && preClearSnapRef.current) {
+      const snap = preClearSnapRef.current;
+      preClearSnapRef.current = null;
+      pendingClearRedoRef.current = true;
+      opsRef.current = snap.ops;
+      const bctx = baselineRef.current.getContext("2d", { willReadFrequently: true });
+      bctx.setTransform(1, 0, 0, 1, 0, 0);
+      bctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+      bctx.drawImage(snap.baseline, 0, 0);
+      bakedRef.current = snap.baked;
+      redoRef.current = [];
+      setSelectedIdx(null);
+      redrawAll();
+      syncState();
+      return;
+    }
+    if (opsRef.current.length === 0) return;
+    pendingClearRedoRef.current = false;
+    setSelectedIdx(null);
+    redoRef.current.push(opsRef.current.pop());
+    if (redoRef.current.length > HISTORY_CAP) redoRef.current.shift();
+    redrawAll();
+    syncState();
+  }, [applyEdit, redrawAll, syncState]);
+
+  const clearCanvas = useCallback(() => {
+    // Dismiss any in-progress text box (Clear was leaving it on screen).
+    setTextEdit(null);
+    setSelectedIdx(null);
+    selectDragRef.current = null;
+    const hasAnything = opsRef.current.length > 0 || bakedRef.current;
+    if (!hasAnything) {
+      redrawAll();
+      syncState();
+      return;
+    }
+    preClearSnapRef.current = {
+      ops: opsRef.current.slice(),
+      baseline: cloneBaseline(),
+      baked: bakedRef.current,
+    };
+    pendingClearRedoRef.current = false;
+    editUndoRef.current = [];
+    editRedoRef.current = [];
+    opsRef.current = [];
+    redoRef.current = [];
+    resetBaselineEmpty();
+    bakedRef.current = false;
+    redrawAll();
+    syncState();
+  }, [cloneBaseline, redrawAll, resetBaselineEmpty, syncState]);
+
+  const redo = useCallback(() => {
+    if (editRedoRef.current.length > 0) {
+      const entry = editRedoRef.current.pop();
+      editUndoRef.current.push(entry);
+      applyEdit(entry, "redo");
+      return;
+    }
+    // Redo a Clear that was just undone.
+    if (pendingClearRedoRef.current) {
+      pendingClearRedoRef.current = false;
+      clearCanvas();
+      return;
+    }
+    if (redoRef.current.length === 0) return;
+    setSelectedIdx(null);
+    opsRef.current.push(redoRef.current.pop());
+    while (opsRef.current.length > HISTORY_CAP) bakeOldest();
+    redrawAll();
+    syncState();
+  }, [applyEdit, bakeOldest, clearCanvas, redrawAll, syncState]);
+
+  useEffect(() => {
+    const c = canvasRef.current;
+    if (!c) return;
+    c.width = CANVAS_W;
+    c.height = CANVAS_H;
+    ctxRef.current = c.getContext("2d", { willReadFrequently: true });
+    const off = document.createElement("canvas");
+    off.width = CANVAS_W;
+    off.height = CANVAS_H;
+    const bctx = off.getContext("2d", { willReadFrequently: true });
+    paintBackground(bctx);
+    baselineRef.current = off;
+    bakedRef.current = false;
+    opsRef.current = [];
+    redoRef.current = [];
+    preClearSnapRef.current = null;
+    pendingClearRedoRef.current = false;
+    editUndoRef.current = [];
+    editRedoRef.current = [];
+    selectDragRef.current = null;
+    setSelectedIdx(null);
+    redrawAll();
+    syncState();
+  }, [redrawAll, syncState]);
+
+  function posFromEvent(e) {
+    const c = canvasRef.current;
+    const rect = c.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(CANVAS_W, (e.clientX - rect.left) * (c.width / rect.width))),
+      y: Math.max(0, Math.min(CANVAS_H, (e.clientY - rect.top) * (c.height / rect.height))),
+    };
+  }
+
+  function hitTestSelectable(p) {
+    for (let i = opsRef.current.length - 1; i >= 0; i--) {
+      const op = opsRef.current[i];
+      if (!isSelectable(op)) continue;
+      const box = opBBox(op, ctxRef.current);
+      if (pointInBBox(p, box, 8)) return i;
+    }
+    return null;
+  }
+
+  const deleteSelected = useCallback(() => {
+    const idx = selectedIdxRef.current;
+    if (idx == null) return;
+    const op = opsRef.current[idx];
+    if (!op || !isSelectable(op)) return;
+    pushEdit({ kind: "delete", index: idx, op: cloneOp(op) });
+    opsRef.current.splice(idx, 1);
+    setSelectedIdx(null);
+    selectedIdxRef.current = null;
+    selectDragRef.current = null;
+    redrawAll();
+    syncState();
+    setAnnounce("Delete selected");
+  }, [pushEdit, redrawAll, syncState]);
+
+  const bringToFront = useCallback(() => {
+    const idx = selectedIdxRef.current;
+    if (idx == null || idx >= opsRef.current.length - 1) return;
+    const before = opsRef.current.map(cloneOp);
+    const [op] = opsRef.current.splice(idx, 1);
+    opsRef.current.push(op);
+    const after = opsRef.current.map(cloneOp);
+    const selectAfter = opsRef.current.length - 1;
+    pushEdit({ kind: "reorder", before, after, selectBefore: idx, selectAfter });
+    setSelectedIdx(selectAfter);
+    selectedIdxRef.current = selectAfter;
+    redrawAll();
+    setAnnounce("Bring to front");
+  }, [pushEdit, redrawAll]);
+
+  const sendToBack = useCallback(() => {
+    const idx = selectedIdxRef.current;
+    if (idx == null || idx <= 0) return;
+    const before = opsRef.current.map(cloneOp);
+    const [op] = opsRef.current.splice(idx, 1);
+    opsRef.current.unshift(op);
+    const after = opsRef.current.map(cloneOp);
+    pushEdit({ kind: "reorder", before, after, selectBefore: idx, selectAfter: 0 });
+    setSelectedIdx(0);
+    selectedIdxRef.current = 0;
+    redrawAll();
+    setAnnounce("Send to back");
+  }, [pushEdit, redrawAll]);
+
+  function openTextEditor(e) {
+    const p = posFromEvent(e);
+    const frameRect = frameRef.current.getBoundingClientRect();
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const fontPx = textFontPx(brush);
+    const dispFontPx = fontPx * (canvasRect.width / CANVAS_W);
+    setTextEdit({
+      cx: p.x,
+      cy: p.y,
+      dispX: e.clientX - frameRect.left,
+      dispY: e.clientY - frameRect.top,
+      value: "",
+      fontPx,
+      dispFontPx,
+    });
+    setTimeout(() => {
+      const el = textInputRef.current;
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      // Keep the text box above the on-screen keyboard on mobile.
+      el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+      // Extra nudge after the keyboard opens.
+      setTimeout(() => el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" }), 350);
+    }, 60);
+  }
+
+  async function placeText() {
+    const t = textEdit;
+    if (!t) return;
+    const val = (t.value || "").slice(0, TEXT_MAX);
+    if (!val.trim()) {
+      setTextEdit(null);
+      return;
+    }
+    try {
+      if (document.fonts && document.fonts.load) {
+        await document.fonts.load(`${t.fontPx}px "${textFont}"`);
       }
+    } catch {
+      /* fall back to whatever is available */
+    }
+    const op = { type: "text", text: val, x: t.cx, y: t.cy, color, font: textFont, size: t.fontPx };
+    setTextEdit(null);
+    commit(op);
+  }
+
+  function handleTextKey(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      placeText();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setTextEdit(null);
+    }
+  }
+
+  function handlePointerDown(e) {
+    if (textEdit) return; // finish text first
+    if (tool === "text") {
+      e.preventDefault();
+      openTextEditor(e);
+      return;
+    }
+    e.preventDefault();
+    const c = canvasRef.current;
+    try {
+      c.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    const p = posFromEvent(e);
+
+    if (tool === "select") {
+      const idx = selectedIdxRef.current;
+      if (idx != null) {
+        const op = opsRef.current[idx];
+        const box = op && isSelectable(op) ? opBBox(op, ctxRef.current) : null;
+        const handle = box ? hitHandle(p, box, 16) : null;
+        if (handle) {
+          selectDragRef.current = {
+            mode: "resize",
+            handle,
+            startP: p,
+            origOp: cloneOp(op),
+            origBox: { ...box },
+            index: idx,
+          };
+          drawingRef.current = true;
+          return;
+        }
+        if (box && pointInBBox(p, box, 6)) {
+          selectDragRef.current = {
+            mode: "move",
+            startP: p,
+            origOp: cloneOp(op),
+            index: idx,
+          };
+          drawingRef.current = true;
+          return;
+        }
+      }
+      const hit = hitTestSelectable(p);
+      setSelectedIdx(hit);
+      selectedIdxRef.current = hit;
+      selectDragRef.current = null;
+      redrawAll();
+      if (hit != null) {
+        // Start move immediately if pressing on the newly selected object.
+        const op = opsRef.current[hit];
+        selectDragRef.current = {
+          mode: "move",
+          startP: p,
+          origOp: cloneOp(op),
+          index: hit,
+        };
+        drawingRef.current = true;
+      }
+      return;
+    }
+
+    if (tool === "fill") {
+      const ctx = ctxRef.current;
+      floodFill(ctx, p.x, p.y, color);
+      if (mirror) floodFill(ctx, CANVAS_W - p.x, p.y, color);
+      commit({ type: "fill", color, x: p.x, y: p.y, mirror });
+      return;
+    }
+
+    if (SHAPE_TOOLS.includes(tool)) {
+      setSelectedIdx(null);
+      curOpRef.current = {
+        type: "shape",
+        shape: tool,
+        color,
+        size: brush,
+        fill: tool === "line" || tool === "curve" ? false : fillShapes,
+        start: p,
+        end: p,
+        mirror,
+      };
+      drawingRef.current = true;
+      return;
+    }
+
+    if (tool === "brush" || tool === "glow" || tool === "eraser") {
+      setSelectedIdx(null);
+      const op = { type: "stroke", mode: tool, color, size: brush, points: [p], mirror };
+      curOpRef.current = op;
+      drawingRef.current = true;
+      const ctx = ctxRef.current;
+      strokeDotAt(ctx, op, p);
+      if (mirror) strokeDotAt(ctx, op, { x: CANVAS_W - p.x, y: p.y });
+    }
+  }
+
+  function handlePointerMove(e) {
+    if (!drawingRef.current) return;
+    e.preventDefault();
+    const p = posFromEvent(e);
+
+    // Select tool drag (move / resize)
+    const drag = selectDragRef.current;
+    if (tool === "select" && drag) {
+      if (drag.mode === "move") {
+        const dx = p.x - drag.startP.x;
+        const dy = p.y - drag.startP.y;
+        opsRef.current[drag.index] = translateOp(drag.origOp, dx, dy);
+        redrawAll();
+      } else if (drag.mode === "resize") {
+        const newBox = resizeBoxFromHandle(drag.origBox, drag.handle, p);
+        opsRef.current[drag.index] = scaleOp(drag.origOp, drag.origBox, newBox);
+        redrawAll();
+      }
+      return;
+    }
+
+    const op = curOpRef.current;
+    if (!op) return;
+    const ctx = ctxRef.current;
+    if (op.type === "shape") {
+      op.end = p;
+      redrawAll();
+      renderOp(ctx, op);
+      return;
+    }
+    const prev = op.points[op.points.length - 1];
+    op.points.push(p);
+    strokeSegAt(ctx, op, prev, p);
+    if (op.mirror) strokeSegAt(ctx, op, { x: CANVAS_W - prev.x, y: prev.y }, { x: CANVAS_W - p.x, y: p.y });
+  }
+
+  function handlePointerUp(e) {
+    if (!drawingRef.current) return;
+    drawingRef.current = false;
+    try {
+      canvasRef.current.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+
+    // Finish select move / resize
+    const drag = selectDragRef.current;
+    if (tool === "select" && drag) {
+      selectDragRef.current = null;
+      const current = opsRef.current[drag.index];
+      if (current && JSON.stringify(current) !== JSON.stringify(drag.origOp)) {
+        pushEdit({ kind: "patch", index: drag.index, before: drag.origOp, after: cloneOp(current) });
+      }
+      redrawAll();
+      syncState();
+      return;
+    }
+
+    const op = curOpRef.current;
+    curOpRef.current = null;
+    if (!op) return;
+    if (op.type === "shape") {
+      const moved = Math.abs(op.end.x - op.start.x) > 2 || Math.abs(op.end.y - op.start.y) > 2;
+      if (!moved) {
+        redrawAll();
+        return;
+      }
+    }
+    commit(op);
+  }
+
+  // ---- tool selection + announcements ----
+  function selectTool(id, label) {
+    setTool(id);
+    setAnnounce(label);
+    setHelpOpen(false);
+    if (id !== "select") {
+      selectedIdxRef.current = null;
+      setSelectedIdx(null);
+      selectDragRef.current = null;
+      redrawAll();
+    }
+  }
+  function toggleFill() {
+    setFillShapes((v) => {
+      const nv = !v;
+      setAnnounce(nv ? "Filled" : "Outline");
+      return nv;
+    });
+  }
+  function toggleMirror() {
+    setMirror((v) => {
+      const nv = !v;
+      setAnnounce(nv ? "Mirror on" : "Mirror off");
+      return nv;
+    });
+  }
+  function pickSize(size, nm) {
+    setBrush(size);
+    setAnnounce(nm);
+  }
+
+  async function handleDownload() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setAnnounce("Download WebP");
+    try {
+      // Export without the selection overlay.
+      redrawAll({ showSelection: false });
+      const blob = await exportCompressedWebp(canvas);
+      redrawAll({ showSelection: true });
+      if (!blob) return;
+      const ext = blob.type === "image/webp" ? "webp" : "png";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `leave-your-mark.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      redrawAll({ showSelection: true });
+    }
+  }
+
+  // Delete key removes the selected object (Select tool).
+  useEffect(() => {
+    const onKey = (e) => {
+      if (tool !== "select") return;
+      if (textEdit) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        const tag = (e.target && e.target.tagName) || "";
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        e.preventDefault();
+        deleteSelected();
+      } else if (e.key === "Escape") {
+        setSelectedIdx(null);
+        selectedIdxRef.current = null;
+        selectDragRef.current = null;
+        redrawAll();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [tool, textEdit, redrawAll, deleteSelected]);
+
+  // ---- Newest thumbs for the Enter The Guest Wall CTA ----
+  const [entries, setEntries] = useState([]);
+
+  const fetchEntries = useCallback(async () => {
+    try {
+      const res = await fetch(`${apiBase}/api/guestbook`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      setEntries(Array.isArray(data.entries) ? data.entries : []);
+    } catch {
+      /* thumbs are optional */
     }
   }, [apiBase]);
 
   useEffect(() => {
-    fetchLeaderboard();
-  }, [fetchLeaderboard]);
+    fetchEntries();
+  }, [fetchEntries]);
 
-  const endGame = useCallback(() => {
-    if (stoppingRef.current) return;
-    stoppingRef.current = true;
-    setTimeout(() => {
-      stoppingRef.current = false;
-    }, 0);
-
-    const finalTyped = typedRef.current;
-    const targetText = targetRef.current;
-    setRunning(false);
-    const stats = computeTypingStats(finalTyped, targetText, DURATION);
-    setResults({ ...stats, duration: DURATION });
-    setPhase("results");
-
-    const canSave = stats.netWpm > 0 && stats.grossWpm > 0 && stats.accuracy > 0 && finalTyped.trim().length > 0;
-
+  // Count visits once per session (display lives in The Guest Wall footer only).
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
-      if (!canSave) {
-        setMadeLeaderboard(null);
-        return;
-      }
+      let local = false;
       try {
-        const res = await fetch(`${apiBase}/api/typing-scores`, {
+        const h = window.location.hostname;
+        local = h === "localhost" || h === "127.0.0.1" || h === "[::1]";
+      } catch {
+        local = false;
+      }
+
+      let vid = "";
+      try {
+        vid = localStorage.getItem("mannat_visitor_id") || "";
+        if (!vid) {
+          vid = makeVisitorId();
+          localStorage.setItem("mannat_visitor_id", vid);
+        }
+      } catch {
+        vid = makeVisitorId();
+      }
+
+      let counted = false;
+      try {
+        counted = sessionStorage.getItem("mannat_visit_counted") === "1";
+      } catch {
+        counted = false;
+      }
+
+      if (local || counted || cancelled) return;
+
+      try {
+        const res = await fetch(`${apiBase}/api/visits`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: clampLabName(name),
-            duration: DURATION,
-            netWpm: stats.netWpm,
-            grossWpm: stats.grossWpm,
-            accuracy: stats.accuracy,
-          }),
+          body: JSON.stringify({ visitorId: vid }),
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || "Save failed");
-        setMadeLeaderboard(!!data.inTop5);
-      } catch {
-        setMadeLeaderboard(false);
-      } finally {
-        await fetchLeaderboard();
-        const key = clampLabName(name);
-        setPbMap((prev) => {
-          const next = { ...(prev || {}) };
-          const cur = next[key];
-          if (!cur || stats.netWpm > (cur.netWpm || 0)) {
-            next[key] = { netWpm: stats.netWpm, accuracy: stats.accuracy, at: new Date().toISOString() };
-            savePB(next);
+        if (res.ok) {
+          try {
+            sessionStorage.setItem("mannat_visit_counted", "1");
+          } catch {
+            /* ignore */
           }
-          return next;
-        });
+        }
+      } catch {
+        /* best-effort */
       }
     })();
-  }, [apiBase, fetchLeaderboard, name]);
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
 
-  useEffect(() => {
-    if (!running) {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+  async function submit() {
+    if (submitting) return;
+    setFormErr("");
+    setFormOk("");
+    const nm = name.trim();
+    if (!nm) {
+      setFormErr("Please add your name.");
       return;
     }
-    const tick = () => {
-      const elapsed = (performance.now() - startRef.current) / 1000;
-      const left = Math.max(0, DURATION - elapsed);
-      setTimeLeft(left);
-      if (left <= 0) {
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-        endGame();
+    if (!hasContent) {
+      setFormErr("Draw something first — leave your mark!");
+      return;
+    }
+    let drawing;
+    try {
+      redrawAll({ showSelection: false });
+      const blob = await exportCompressedWebp(canvasRef.current);
+      redrawAll({ showSelection: true });
+      if (!blob || blob.size > 100 * 1024) {
+        setFormErr("Could not compress the drawing. Try a simpler doodle.");
         return;
       }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    };
-  }, [running, endGame]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  function pickSentence() {
-    return sentences[Math.floor(Math.random() * sentences.length)];
-  }
-
-  function startTest() {
-    if (!name.trim()) {
-      alert("Please enter your name to start.");
+      drawing = await blobToDataURL(blob);
+    } catch {
+      redrawAll({ showSelection: true });
+      setFormErr("Could not read the drawing.");
       return;
     }
+    setSubmitting(true);
     try {
-      localStorage.setItem("mannat_player_name", name.trim());
-    } catch {}
-    stoppingRef.current = false;
-    setResults(null);
-    setMadeLeaderboard(null);
-    const s = pickSentence();
-    setTarget(s);
-    targetRef.current = s;
-    setTyped("");
-    typedRef.current = "";
-    setTimeLeft(DURATION);
-    setRunning(true);
-    setPhase("playing");
-    startRef.current = performance.now();
-    setTimeout(() => inputRef.current?.focus(), 40);
+      localStorage.setItem("mannat_player_name", nm);
+    } catch {
+      /* ignore */
+    }
+    try {
+      const res = await fetch(`${apiBase}/api/guestbook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nm, message: message.trim(), drawing, color, website: honeypot }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Could not submit. Please try again.");
+      // Entries start pending — refresh thumbs from approved-only list.
+      await fetchEntries();
+      clearCanvas();
+      setMessage("");
+      setFormOk("Thanks! Your mark was submitted for review. 🎉");
+      setTimeout(() => setFormOk(""), 4500);
+    } catch (e) {
+      setFormErr(e?.message || "Could not submit. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function playAgain() {
-    setPhase("intro");
-    setResults(null);
-    setTyped("");
-    typedRef.current = "";
-    setTarget("");
-    targetRef.current = "";
-    setMadeLeaderboard(null);
-    setTimeLeft(DURATION);
-    setRunning(false);
-  }
-
-  function initials(n) {
-    const s = clampLabName(n || "Player");
-    const p = s.split(/\s+/).filter(Boolean);
-    if (p.length >= 2) return (p[0][0] + p[1][0]).toUpperCase().slice(0, 2);
-    return s.slice(0, 2).toUpperCase();
-  }
-
-  const stacked = layout === "stacked";
-  const progressPct = Math.max(0, Math.min(100, (timeLeft / DURATION) * 100));
-  const me = clampLabName(name);
-  const myPb = pbMap && pbMap[me];
+  const visible = entries.filter((e) => e && e.drawing);
+  const newestThumbs = visible.slice(0, 3);
 
   return (
-    <div className="portfolio-interactive-root" style={ils.root}>
-      <div style={{ ...ils.headerRow, ...(stacked ? ils.headerRowStacked : null) }}>
-        <div style={ils.titleBlock}>
-          <div style={ils.titleLine}>
-            <div style={ils.beakerWrap} aria-hidden>
-              <div style={ils.beakerInner}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M9 3h6v3l4 7v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-6l4-7V3z"
-                    stroke="rgba(226,232,240,0.9)"
-                    strokeWidth="1.35"
-                    strokeLinejoin="round"
-                  />
-                  <path d="M8 14h8" stroke="rgba(147,197,253,0.5)" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
+    <div className="portfolio-interactive-root" style={gs.root}>
+      <div style={gs.headerRow}>
+        <div style={gs.titleBlock}>
+          <div style={gs.titleLine}>
+            <div style={gs.markWrap} aria-hidden>
+              <div style={gs.markInner}>
+                <PenMark />
               </div>
             </div>
-            <h2 style={ils.h1}>
-              INTERACTIVE <span style={ils.h1Grad}>LAB</span>
+            <h2 style={gs.h1}>
+              LEAVE YOUR <span style={gs.h1Grad}>MARK</span>
             </h2>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden style={{ opacity: 0.9 }}>
-              <path d="M12 2l1.2 4.2L18 8l-4.8 1.8L12 14l-1.2-4.2L6 8l4.8-1.8L12 2z" fill="rgba(244, 114, 182, 0.85)" />
-            </svg>
+            <TitleSparkle />
           </div>
-          {aboutOpen ? (
-            <div style={ils.aboutPanel}>
-              Typing PRO runs for {DURATION} seconds. Scores use standard WPM math and are saved to the portfolio API
-              (MongoDB). Only the top five Net WPM scores appear publicly.
-            </div>
-          ) : null}
+          <p style={gs.sub}>Doodle something, sign your name, and leave a message. Every visitor&apos;s art lives forever on The Guest Wall.</p>
         </div>
-        <button type="button" style={{ ...ils.aboutBtn, ...(stacked ? ils.aboutBtnMobile : null) }} onClick={() => setAboutOpen((v) => !v)}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M12 16v-1M12 8h.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          </svg>
-          About this Lab
-        </button>
       </div>
 
-      <div
-        style={{
-          ...ils.labShellGrid,
-          ...(stacked ? ils.labShellStacked : ils.labShellWide),
-        }}
-      >
-        <div style={{ gridArea: "game", minWidth: 0 }}>
-          <div style={ils.gameCard} className="il-game-card">
-            <div style={ils.arcGlow} aria-hidden />
-            <div style={ils.tabPill}>
-              <span aria-hidden>⌨️</span> Typing PRO
-            </div>
+      <div style={gs.shellGrid}>
+        {/* ---- Draw card ---- */}
+        <div style={gs.card} className="lym-card">
+          <div style={gs.arcGlow} aria-hidden />
+          <div style={gs.tabPill}>
+            <span aria-hidden>🎨</span> Your Canvas
+          </div>
 
-            {phase === "intro" && (
-              <>
-                <h3 style={ils.heroTitle}>
-                  Type. Score.{" "}
-                  <span
-                    style={{
-                      background: "linear-gradient(92deg, #d8b4fe, #e879f9, #a78bfa)",
-                      WebkitBackgroundClip: "text",
-                      backgroundClip: "text",
-                      color: "transparent",
-                      WebkitTextFillColor: "transparent",
-                    }}
-                  >
-                    Compete.
+          <div style={gs.canvasFrame} ref={frameRef}>
+            <canvas
+              ref={canvasRef}
+              style={{ ...gs.canvas, cursor: tool === "select" ? "default" : "crosshair" }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              aria-label="Drawing canvas"
+            />
+            {textEdit ? (
+              <input
+                ref={textInputRef}
+                className="lym-text-editor"
+                value={textEdit.value}
+                maxLength={TEXT_MAX}
+                placeholder="Type, Enter to place"
+                onChange={(e) => setTextEdit((t) => ({ ...t, value: e.target.value }))}
+                onKeyDown={handleTextKey}
+                style={{ left: textEdit.dispX, top: textEdit.dispY, fontFamily: FONTS.find((f) => f.name === textFont)?.css, fontSize: Math.max(14, textEdit.dispFontPx), color }}
+              />
+            ) : null}
+          </div>
+
+          {/* tool-name bar (helpful on touch) + help button */}
+          <div className="lym-toolname-bar">
+            <span className="lym-toolname">{announce}</span>
+            <button
+              type="button"
+              className="lym-help-btn"
+              aria-label="Help: icon guide"
+              aria-expanded={helpOpen}
+              onClick={() => setHelpOpen((v) => !v)}
+            >
+              <IconHelp />
+            </button>
+          </div>
+
+          {helpOpen ? (
+            <div className="lym-help-panel" role="region" aria-label="Toolbar icon guide">
+              {HELP_ITEMS.map((it) => (
+                <div className="lym-help-row" key={it.label}>
+                  <span className="lym-help-icon" aria-hidden>
+                    {it.Icon ? <it.Icon /> : <span style={{ fontWeight: 800, fontSize: 12 }}>{it.text}</span>}
                   </span>
-                </h3>
-                <p style={ils.heroSub}>
-                  Get in the <span style={ils.strongHi}>top 5</span> and your name is on the leaderboard.
-                </p>
-                <div style={{ ...ils.nameRow, ...(stacked ? ils.nameRowStacked : null) }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden style={{ opacity: 0.7 }}>
-                    <path
-                      d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zM4 20a8 8 0 0 1 16 0"
-                      stroke="rgba(148,163,184,0.9)"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <input
-                    style={ils.nameInput}
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    autoComplete="nickname"
-                  />
+                  <span>{it.label}</span>
                 </div>
-                <button type="button" style={{ ...ils.startBtn, ...(stacked ? ils.startBtnFull : null) }} className="il-start-btn" onClick={startTest}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path
-                      d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Start Test
-                </button>
-                <div style={{ ...ils.infoRow, ...(stacked ? ils.infoRowMob : null) }}>
-                  <div style={ils.infoCard}>
-                    <div style={ils.infoCardLabel}>30 Seconds</div>
-                    <div style={ils.infoCardSub}>Test Duration</div>
-                  </div>
-                  <div style={ils.infoCard}>
-                    <div style={ils.infoCardLabel}>WPM &amp; Accuracy</div>
-                    <div style={ils.infoCardSub}>Results</div>
-                  </div>
-                  <div style={ils.infoCard}>
-                    <div style={ils.infoCardLabel}>Top 5 Only</div>
-                    <div style={ils.infoCardSub}>On Leaderboard</div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {phase === "playing" && (
-              <div style={ils.playArea}>
-                <div style={ils.timerCard}>
-                  <div style={ils.timerTop}>
-                    <span style={ils.timerLbl}>TIME LEFT</span>
-                    <span style={ils.timerNum}>{Math.ceil(timeLeft)}s</span>
-                  </div>
-                  <div style={ils.barOuter}>
-                    <div style={{ ...ils.barInner, width: `${progressPct}%` }} />
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(148,163,184,0.85)", marginBottom: 6 }}>TARGET</div>
-                <div style={ils.targetBox} aria-live="polite">
-                  {target.split("").map((ch, i) => {
-                    const typedChar = typed[i];
-                    const ok =
-                      typedChar !== undefined && typedChar !== ""
-                        ? String(typedChar).toLowerCase() === String(ch).toLowerCase()
-                        : null;
-                    return (
-                      <span
-                        key={i}
-                        style={{
-                          padding: ok === true ? "1px 2px" : ok === false ? "1px 2px" : undefined,
-                          borderRadius: 3,
-                          background:
-                            ok === true ? "rgba(34,197,94,0.2)" : ok === false ? "rgba(248,113,113,0.18)" : "transparent",
-                        }}
-                      >
-                        {ch}
-                      </span>
-                    );
-                  })}
-                </div>
-                <div style={ils.typeArea}>
-                  <textarea
-                    ref={inputRef}
-                    style={ils.textarea}
-                    placeholder="Type the text above…"
-                    value={typed}
-                    onChange={(e) => setTyped(e.target.value)}
-                    spellCheck={false}
-                  />
-                </div>
-              </div>
-            )}
-
-            {phase === "results" && results && (
-              <div style={ils.resultsCard}>
-                <h3 style={{ ...ils.heroTitle, fontSize: "1.25rem" }}>Your results</h3>
-                <div style={{ ...ils.resultsGrid, ...(stacked ? ils.resultsGridStacked : null) }}>
-                  <div style={ils.statCell}>
-                    <div style={ils.statLabel}>NET WPM</div>
-                    <div style={ils.statVal}>{results.netWpm}</div>
-                  </div>
-                  <div style={ils.statCell}>
-                    <div style={ils.statLabel}>GROSS WPM</div>
-                    <div style={ils.statVal}>{results.grossWpm}</div>
-                  </div>
-                  <div style={ils.statCell}>
-                    <div style={ils.statLabel}>ACCURACY</div>
-                    <div style={ils.statVal}>{results.accuracy}%</div>
-                  </div>
-                  <div style={ils.statCell}>
-                    <div style={ils.statLabel}>DURATION</div>
-                    <div style={ils.statVal}>{results.duration}s</div>
-                  </div>
-                </div>
-                {madeLeaderboard === true && <div style={ils.msgLine}>You made the leaderboard!</div>}
-                {madeLeaderboard === false && <div style={ils.msgLine}>Not in top 5 yet — try again!</div>}
-                <button type="button" style={ils.secondaryBtn} className="il-play-again" onClick={playAgain}>
-                  Play Again
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <aside
-          style={{
-            gridArea: "lb",
-            ...ils.lbCard,
-            ...(stacked ? { position: "relative", top: "auto" } : null),
-          }}
-          aria-label="Typing leaderboard"
-        >
-          <div style={ils.lbHead}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span aria-hidden>👑</span>
-              <span style={ils.lbTitle}>LEADERBOARD</span>
-            </div>
-            <select style={ils.lbSelect} value="top5" aria-label="Leaderboard scope" disabled>
-              <option value="top5">Top 5 (All Time)</option>
-            </select>
-          </div>
-
-          {lbStatus === "loading" && <div style={{ marginTop: 12, color: "rgba(148,163,184,0.85)", fontSize: 13 }}>Loading…</div>}
-          {lbWarn ? <div style={ils.lbWarn}>{lbWarn}</div> : null}
-          {lbStatus === "err" && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ color: "rgba(251, 113, 133, 0.95)", fontSize: 13, lineHeight: 1.5 }}>{lbErr}</div>
-              <div style={ils.lbRetryRow}>
-                <button type="button" style={ils.lbRetryBtn} onClick={() => fetchLeaderboard()}>
-                  Retry
-                </button>
-              </div>
-            </div>
-          )}
-          {lbStatus === "ok" && lbRows.length === 0 && (
-            <div style={{ marginTop: 12, color: "rgba(148,163,184,0.85)", fontSize: 13 }}>No scores yet — be the first.</div>
-          )}
-          {lbStatus === "ok" &&
-            lbRows.map((row) => (
-              <div key={row._id || row.rank} style={{ ...ils.lbRow, ...(stacked ? ils.lbRowMobile : null) }}>
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <IlMedal rank={row.rank} />
-                </div>
-                <div style={ils.avatar}>{initials(row.name)}</div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={ils.lbName}>{row.name}</div>
-                  <div style={ils.lbAcc}>{row.accuracy}% accuracy</div>
-                </div>
-                <div>
-                  <div style={ils.lbWpm}>{row.netWpm}</div>
-                  <div style={ils.lbAcc}>WPM</div>
-                </div>
-              </div>
-            ))}
-
-          {myPb ? (
-            <div style={ils.yourBest}>
-              <div style={ils.yourBestTitle}>YOUR BEST</div>
-              <div style={ils.yourBestBody}>
-                {myPb.netWpm} WPM, {myPb.accuracy}% accuracy
-              </div>
+              ))}
             </div>
           ) : null}
-        </aside>
 
-        <div style={{ gridArea: "how", minWidth: 0 }}>
-          <div style={ils.howCard}>
-            <div style={ils.howTitle}>
-              <HowTitleSparkle />
-              How it works
+          <div style={gs.toolbar}>
+            {/* tools + shapes */}
+            <div style={gs.toolRow}>
+              {TOOL_DEFS.map((t) => (
+                <ToolButton key={t.id} label={t.label} active={tool === t.id} onActivate={() => selectTool(t.id, t.label)} style={gs.toolBtn} extraStyle={gs.toolBtnActive}>
+                  <t.Icon />
+                </ToolButton>
+              ))}
+              <span style={gs.sep} aria-hidden />
+              {SHAPE_DEFS.map((t) => (
+                <ToolButton key={t.id} label={t.label} active={tool === t.id} onActivate={() => selectTool(t.id, t.label)} style={gs.toolBtn} extraStyle={gs.toolBtnActive}>
+                  <t.Icon />
+                </ToolButton>
+              ))}
             </div>
-            <div style={{ ...ils.howSteps, ...(stacked ? ils.howStepsStacked : null) }} className="il-how-steps">
-              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
-                <div style={ils.howIconRing}>
-                  <HowIconUser />
-                </div>
-                <div style={ils.howStepTitle}>Enter your name</div>
-                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>Pick a name to get started</div>
+
+            {/* font picker (text tool only) */}
+            {tool === "text" ? (
+              <div style={gs.toolRow} className="lym-font-row">
+                {FONTS.map((f) => (
+                  <button
+                    key={f.name}
+                    type="button"
+                    className="lym-font-btn"
+                    aria-pressed={textFont === f.name}
+                    onClick={() => setTextFont(f.name)}
+                    style={{ fontFamily: f.css, ...(textFont === f.name ? { borderColor: "rgba(217,70,239,0.65)", background: "rgba(217,70,239,0.16)", color: "#fff" } : null) }}
+                  >
+                    {f.name}
+                  </button>
+                ))}
               </div>
-              <span style={{ ...ils.howChev, ...(stacked ? ils.howChevStacked : null) }} aria-hidden>
-                ›
-              </span>
-              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
-                <div style={ils.howIconRing}>
-                  <HowIconBolt />
-                </div>
-                <div style={ils.howStepTitle}>30-sec test</div>
-                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>Type the given text as fast and accurately as you can</div>
-              </div>
-              <span style={{ ...ils.howChev, ...(stacked ? ils.howChevStacked : null) }} aria-hidden>
-                ›
-              </span>
-              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
-                <div style={ils.howIconRing}>
-                  <HowIconChart />
-                </div>
-                <div style={ils.howStepTitle}>Get your results</div>
-                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>See your WPM, accuracy, and rank</div>
-              </div>
-              <span style={{ ...ils.howChev, ...(stacked ? ils.howChevStacked : null) }} aria-hidden>
-                ›
-              </span>
-              <div style={{ ...ils.howStep, ...(stacked ? ils.howStepStacked : null) }}>
-                <div style={ils.howIconRing}>
-                  <HowIconTrophy />
-                </div>
-                <div style={ils.howStepTitle}>Top 5 only</div>
-                <div style={{ ...ils.howStepBody, ...(stacked ? ils.howStepBodyStacked : null) }}>Only the best five scores are shown</div>
-              </div>
+            ) : null}
+
+            {/* size + toggles */}
+            <div style={gs.toolRow}>
+              {BRUSHES.map((b) => (
+                <ToolButton key={b.size} label={b.name} active={brush === b.size} onActivate={() => pickSize(b.size, b.name)} style={gs.brushBtn} extraStyle={gs.brushBtnActive}>
+                  {b.label}
+                </ToolButton>
+              ))}
+              <span style={gs.sep} aria-hidden />
+              <ToolButton label="Outline or Filled" active={fillShapes} onActivate={toggleFill} style={gs.toggle} extraStyle={gs.toggleActive}>
+                <IconDroplet />
+                {fillShapes ? "Filled" : "Outline"}
+              </ToolButton>
+              <ToolButton label="Mirror" active={mirror} onActivate={toggleMirror} style={gs.toggle} extraStyle={gs.toggleActive}>
+                <IconMirror />
+                Mirror
+              </ToolButton>
             </div>
+
+            {/* colors */}
+            <div style={gs.swatchRow}>
+              {PALETTE.map((c) => (
+                <button key={c} type="button" aria-label={`Color ${c}`} onClick={() => setColor(c)} style={{ ...gs.swatch, background: c, ...(color === c ? gs.swatchActive : null) }} />
+              ))}
+              <label className="lym-color-custom" style={{ ...gs.swatch, background: color, position: "relative", overflow: "hidden", display: "inline-flex", alignItems: "center", justifyContent: "center" }} title="Custom color">
+                <span style={{ fontSize: 13, color: "#fff", mixBlendMode: "difference" }} aria-hidden>
+                  +
+                </span>
+                <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} aria-label="Pick a custom color" />
+              </label>
+            </div>
+
+            {/* select actions */}
+            {tool === "select" ? (
+              <div style={gs.toolRow}>
+                <ToolButton label="Bring to front" disabled={selectedIdx == null} onActivate={bringToFront} style={gs.iconBtn}>
+                  <IconBringFront /> Front
+                </ToolButton>
+                <ToolButton label="Send to back" disabled={selectedIdx == null} onActivate={sendToBack} style={gs.iconBtn}>
+                  <IconSendBack /> Back
+                </ToolButton>
+                <ToolButton label="Delete selected" disabled={selectedIdx == null} onActivate={deleteSelected} style={gs.iconBtn}>
+                  <IconDeleteSel /> Delete
+                </ToolButton>
+              </div>
+            ) : null}
+
+            {/* actions */}
+            <div style={gs.toolRow}>
+              <ToolButton label="Undo" disabled={!canUndo} onActivate={undo} style={gs.iconBtn}>
+                <IconUndo /> Undo
+              </ToolButton>
+              <ToolButton label="Redo" disabled={!canRedo} onActivate={redo} style={gs.iconBtn}>
+                <IconRedo /> Redo
+              </ToolButton>
+              <ToolButton label="Clear" disabled={!hasContent && !textEdit} onActivate={clearCanvas} style={gs.iconBtn}>
+                <IconTrash /> Clear
+              </ToolButton>
+              <ToolButton label="Download WebP" disabled={!hasContent} onActivate={handleDownload} style={gs.iconBtn}>
+                <IconDownload /> WebP
+              </ToolButton>
+            </div>
+          </div>
+
+          <div style={gs.fieldRow}>
+            <div style={gs.field}>
+              <div style={gs.fieldLabel}>
+                <span>YOUR NAME</span>
+                <span>
+                  {name.length}/{NAME_MAX}
+                </span>
+              </div>
+              <input style={gs.input} value={name} maxLength={NAME_MAX} placeholder="e.g. Alex" onChange={(e) => setName(e.target.value)} autoComplete="nickname" />
+            </div>
+            <div style={gs.field}>
+              <div style={gs.fieldLabel}>
+                <span>MESSAGE (OPTIONAL)</span>
+                <span>
+                  {message.length}/{MSG_MAX}
+                </span>
+              </div>
+              <input style={gs.input} value={message} maxLength={MSG_MAX} placeholder="Say hi or drop a compliment!" onChange={(e) => setMessage(e.target.value)} />
+            </div>
+          </div>
+
+          <input style={gs.honeypot} tabIndex={-1} autoComplete="off" aria-hidden="true" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} placeholder="Leave this empty" />
+
+          <div style={gs.submitRow}>
+            <button type="button" onClick={submit} disabled={submitting} className="lym-submit-btn" style={{ ...gs.submitBtn, ...(submitting ? gs.submitBtnDisabled : null) }}>
+              <PenMark />
+              {submitting ? "Saving…" : "Leave Your Mark"}
+            </button>
+            {formErr ? <span style={gs.msgErr}>{formErr}</span> : null}
+            {formOk ? <span style={gs.msgOk}>{formOk}</span> : null}
           </div>
         </div>
 
-        <div style={{ gridArea: "tip", minWidth: 0 }}>
-          <div style={ils.tipBar}>
-            <span aria-hidden>💡</span>
-            <span>Tip: Accuracy above 90% gives you the best Net WPM.</span>
-          </div>
-        </div>
-
+        {/* ---- Enter The Guest Wall (directly under submit) ---- */}
+        <Link to="/wall" className="lym-enter-wall" aria-label="Enter The Guest Wall">
+          <span className="lym-enter-copy">
+            <span className="lym-enter-kicker">See every mark</span>
+            <span className="lym-enter-title">
+              Enter <span className="lym-enter-title-grad">The Guest Wall</span>
+            </span>
+          </span>
+          <span className="lym-enter-side" aria-hidden>
+            <span className="lym-enter-thumbs">
+              {newestThumbs.length > 0
+                ? newestThumbs.slice(0, 3).map((e, i) => <img key={e._id} src={e.drawing} alt="" className="lym-enter-thumb" style={{ "--i": i }} loading="lazy" />)
+                : [0, 1, 2].map((i) => <span key={i} className="lym-enter-thumb lym-enter-thumb-ph" style={{ "--i": i }} />)}
+            </span>
+            <span className="lym-enter-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </Link>
       </div>
     </div>
   );

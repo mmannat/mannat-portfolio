@@ -1,0 +1,6 @@
+# Keep resume/PDF binaries intact (no line-ending conversion).
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
