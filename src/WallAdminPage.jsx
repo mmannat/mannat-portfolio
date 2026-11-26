@@ -43,10 +43,6 @@ export function WallAdminPage({ apiBase = API_BASE }) {
   const [approved, setApproved] = useState([]);
   const [loadErr, setLoadErr] = useState("");
   const [busyId, setBusyId] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [draftName, setDraftName] = useState("");
-  const [draftMessage, setDraftMessage] = useState("");
-  const [editErr, setEditErr] = useState("");
 
   const checkSession = useCallback(async () => {
     setChecking(true);
@@ -160,65 +156,8 @@ export function WallAdminPage({ apiBase = API_BASE }) {
     setApproved([]);
   }
 
-  function startEdit(entry) {
-    setEditingId(entry._id);
-    setDraftName(entry.name || "");
-    setDraftMessage(entry.message || "");
-    setEditErr("");
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setDraftName("");
-    setDraftMessage("");
-    setEditErr("");
-  }
-
-  function patchLocalEntry(id, next) {
-    const apply = (list) => list.map((e) => (e._id === id ? { ...e, ...next } : e));
-    setPending(apply);
-    setApproved(apply);
-  }
-
-  async function saveEdit(id) {
-    if (!id || busyId) return;
-    const name = draftName.trim();
-    const message = draftMessage.trim();
-    if (!name) {
-      setEditErr("Name is required.");
-      return;
-    }
-    if (name.length > 24 || message.length > 140) {
-      setEditErr("Name or message is too long.");
-      return;
-    }
-    setBusyId(id);
-    setEditErr("");
-    try {
-      const res = await fetch(`${base}/api/guestbook/${id}`, {
-        method: "PATCH",
-        headers: adminHeaders(),
-        body: JSON.stringify({ name, message }),
-      });
-      if (res.status === 401) {
-        setAuthed(false);
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setEditErr(data?.error === "Invalid request" ? "Could not save. Check name/message." : "Could not save.");
-        return;
-      }
-      patchLocalEntry(id, { name, message });
-      cancelEdit();
-    } finally {
-      setBusyId(null);
-    }
-  }
-
   async function approveEntry(id) {
     if (!id || busyId) return;
-    if (editingId === id) cancelEdit();
     setBusyId(id);
     try {
       const res = await fetch(`${base}/api/guestbook/${id}/approve`, {
@@ -240,7 +179,6 @@ export function WallAdminPage({ apiBase = API_BASE }) {
 
   async function deleteEntry(id) {
     if (!id || busyId) return;
-    if (editingId === id) cancelEdit();
     setBusyId(id);
     try {
       const res = await fetch(`${base}/api/guestbook/${id}`, {
@@ -322,10 +260,7 @@ export function WallAdminPage({ apiBase = API_BASE }) {
                 role="tab"
                 aria-selected={tab === "pending"}
                 className={`wall-admin-tab${tab === "pending" ? " active" : ""}`}
-                onClick={() => {
-                  cancelEdit();
-                  setTab("pending");
-                }}
+                onClick={() => setTab("pending")}
               >
                 Pending <span>{pending.length}</span>
               </button>
@@ -334,10 +269,7 @@ export function WallAdminPage({ apiBase = API_BASE }) {
                 role="tab"
                 aria-selected={tab === "approved"}
                 className={`wall-admin-tab${tab === "approved" ? " active" : ""}`}
-                onClick={() => {
-                  cancelEdit();
-                  setTab("approved");
-                }}
+                onClick={() => setTab("approved")}
               >
                 Approved <span>{approved.length}</span>
               </button>
@@ -352,93 +284,38 @@ export function WallAdminPage({ apiBase = API_BASE }) {
               <div className="wall-admin-empty">{tab === "pending" ? "No pending marks." : "No approved marks yet."}</div>
             ) : (
               <ul className="wall-admin-grid">
-                {list.map((e) => {
-                  const isEditing = editingId === e._id;
-                  return (
-                    <li key={e._id} className="wall-admin-card">
-                      <div className="wall-admin-preview">
-                        <img src={e.drawing} alt={`Drawing by ${e.name}`} />
-                      </div>
-                      {isEditing ? (
-                        <div className="wall-admin-edit">
-                          <label className="wall-admin-label" htmlFor={`edit-name-${e._id}`}>
-                            Name
-                          </label>
-                          <input
-                            id={`edit-name-${e._id}`}
-                            className="wall-admin-input"
-                            value={draftName}
-                            maxLength={24}
-                            onChange={(ev) => setDraftName(ev.target.value)}
-                            autoComplete="off"
-                          />
-                          <label className="wall-admin-label" htmlFor={`edit-msg-${e._id}`}>
-                            Comment
-                          </label>
-                          <textarea
-                            id={`edit-msg-${e._id}`}
-                            className="wall-admin-input wall-admin-textarea"
-                            value={draftMessage}
-                            maxLength={140}
-                            rows={3}
-                            onChange={(ev) => setDraftMessage(ev.target.value)}
-                            placeholder="Optional message"
-                          />
-                          {editErr ? <div className="wall-admin-err">{editErr}</div> : null}
-                          <div className="wall-admin-actions">
-                            <button
-                              type="button"
-                              className="wall-admin-btn primary"
-                              disabled={busyId === e._id || !draftName.trim()}
-                              onClick={() => saveEdit(e._id)}
-                            >
-                              Save
-                            </button>
-                            <button type="button" className="wall-admin-btn ghost" disabled={busyId === e._id} onClick={cancelEdit}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="wall-admin-meta">
-                            <div className="wall-admin-name">{e.name}</div>
-                            {e.message ? <p className="wall-admin-msg">{e.message}</p> : <p className="wall-admin-msg muted">No message</p>}
-                            <div className="wall-admin-time">{timeAgo(e.createdAt)}</div>
-                          </div>
-                          <div className="wall-admin-actions">
-                            {tab === "pending" ? (
-                              <button
-                                type="button"
-                                className="wall-admin-btn primary"
-                                disabled={busyId === e._id}
-                                onClick={() => approveEntry(e._id)}
-                              >
-                                Approve
-                              </button>
-                            ) : null}
-                            <button
-                              type="button"
-                              className="wall-admin-btn ghost"
-                              disabled={busyId === e._id}
-                              onClick={() => startEdit(e)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="wall-admin-btn danger"
-                              disabled={busyId === e._id}
-                              onClick={() => deleteEntry(e._id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </li>
-                  );
-                })}
+                {list.map((e) => (
+                  <li key={e._id} className="wall-admin-card">
+                    <div className="wall-admin-preview">
+                      <img src={e.drawing} alt={`Drawing by ${e.name}`} />
+                    </div>
+                    <div className="wall-admin-meta">
+                      <div className="wall-admin-name">{e.name}</div>
+                      {e.message ? <p className="wall-admin-msg">{e.message}</p> : <p className="wall-admin-msg muted">No message</p>}
+                      <div className="wall-admin-time">{timeAgo(e.createdAt)}</div>
+                    </div>
+                    <div className="wall-admin-actions">
+                      {tab === "pending" ? (
+                        <button
+                          type="button"
+                          className="wall-admin-btn primary"
+                          disabled={busyId === e._id}
+                          onClick={() => approveEntry(e._id)}
+                        >
+                          Approve
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="wall-admin-btn danger"
+                        disabled={busyId === e._id}
+                        onClick={() => deleteEntry(e._id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </>
