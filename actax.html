@@ -338,18 +338,6 @@
         line-height: 1.6;
         color: var(--muted);
       }
-      .piece-cta {
-        margin-top: 8px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13.5px;
-        font-weight: 700;
-        color: var(--leaf);
-      }
-      .piece-cta svg { transition: transform 0.2s ease; }
-      .featured:hover .piece-cta svg,
-      .card:hover .piece-cta svg { transform: translateX(3px); }
 
       .gallery {
         display: grid;
@@ -442,27 +430,6 @@
         justify-content: center;
         padding: clamp(22px, 4vw, 36px);
       }
-
-      .view-tag {
-        position: absolute;
-        top: 14px;
-        right: 14px;
-        padding: 6px 11px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: #ecfdf5;
-        background: rgba(11, 20, 38, 0.78);
-        border: 1px solid rgba(122, 179, 86, 0.4);
-        backdrop-filter: blur(6px);
-        opacity: 0;
-        transform: translateY(-4px);
-        transition: opacity 0.2s ease, transform 0.2s ease;
-      }
-      .card:hover .view-tag,
-      .featured:hover .view-tag { opacity: 1; transform: translateY(0); }
 
       .about {
         margin-top: clamp(56px, 9vw, 88px);
@@ -592,7 +559,6 @@
           aria-label="Open Actax Billboard PDF"
         >
           <div class="featured-media">
-            <span class="view-tag">View PDF</span>
             <img
               src="actax-previews/billboard.jpg"
               alt="Actax building directory signage for suite 200"
@@ -608,12 +574,6 @@
               High-contrast suite directory for 200 N Jackson Ave — Actax listed alongside
               neighboring practices, sized for readability from the corridor and street approach.
             </p>
-            <span class="piece-cta">
-              Open full PDF
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </span>
           </div>
         </a>
       </section>
@@ -636,7 +596,6 @@
             aria-label="Open Actax Insurance Postcard PDF"
           >
             <div class="card-media">
-              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/insurance-postcard.jpg"
                 alt="Actax Insurance postcard for Covered California enrollment"
@@ -652,12 +611,6 @@
                 Covered California enrollment and coverage offer, with phone, QR code, and service
                 icons up front.
               </p>
-              <span class="piece-cta">
-                Open full PDF
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
             </div>
           </a>
 
@@ -669,7 +622,6 @@
             aria-label="Open Actax Postcard PDF"
           >
             <div class="card-media">
-              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/postcard.jpg"
                 alt="Actax tax services postcard with six-service grid and contact panel"
@@ -685,12 +637,6 @@
                 Six-service grid with hours, QR code, and contact details, made for handouts and
                 mailers.
               </p>
-              <span class="piece-cta">
-                Open full PDF
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
             </div>
           </a>
 
@@ -702,7 +648,6 @@
             aria-label="Open Business Banner PDF"
           >
             <div class="card-media">
-              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/business-banner.jpg"
                 alt="Actax business banner combining tax and insurance messaging"
@@ -717,12 +662,6 @@
               <p class="piece-desc">
                 Combined tax and insurance message with a QR code for walk-up traffic.
               </p>
-              <span class="piece-cta">
-                Open full PDF
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
             </div>
           </a>
 
@@ -734,7 +673,6 @@
             aria-label="Open Covered California PDF"
           >
             <div class="card-media">
-              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/covered-california.jpg"
                 alt="Covered California enrollment banner with Free Assistance bar"
@@ -750,12 +688,6 @@
                 Enrollment banner with a bold Free Assistance bar and a phone number legible from a
                 distance.
               </p>
-              <span class="piece-cta">
-                Open full PDF
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
             </div>
           </a>
         </div>
