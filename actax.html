@@ -291,23 +291,19 @@
       }
       .featured-media {
         position: relative;
-        background: #0a1222;
-        min-height: 180px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 28px 22px;
+        background: linear-gradient(180deg, #0a1628, #071018);
+        aspect-ratio: 16 / 10;
         overflow: hidden;
       }
       .featured-media img {
         width: 100%;
-        max-height: 240px;
+        height: 100%;
         object-fit: contain;
         object-position: center;
         display: block;
         transition: transform 0.55s ease;
       }
-      .featured:hover .featured-media img { transform: scale(1.02); }
+      .featured:hover .featured-media img { transform: scale(1.03); }
       .featured-body {
         padding: clamp(20px, 3.5vw, 30px);
         display: grid;
@@ -319,7 +315,7 @@
           grid-template-columns: 1.35fr 0.9fr;
           align-items: stretch;
         }
-        .featured-media { min-height: 280px; }
+        .featured-media { aspect-ratio: auto; min-height: 380px; }
         .featured-body { align-content: center; }
       }
 
@@ -556,9 +552,8 @@
           <div class="eyebrow">Marketing Case Study</div>
           <h1><span class="title-grad">Actax</span></h1>
           <p class="lead">
-            Print and outdoor marketing for a San Jose tax &amp; insurance practice —
-            directory signage, postcards, and banners designed to keep contact details
-            and services clear at a glance.
+            Marketing materials I designed for Actax, a San Jose tax and insurance practice,
+            alongside my operations and CRM work.
           </p>
           <div class="meta">
             <span class="chip"><span class="chip-dot" aria-hidden="true"></span>Print &amp; outdoor</span>
@@ -599,10 +594,10 @@
           <div class="featured-media">
             <span class="view-tag">View PDF</span>
             <img
-              src="actax-previews/billboard-actax-row.jpg"
-              alt="Actax row from the Suite 200 building directory signage"
+              src="actax-previews/billboard.jpg"
+              alt="Actax building directory signage for suite 200"
               width="1600"
-              height="242"
+              height="1066"
               loading="eager"
             />
           </div>
@@ -610,7 +605,8 @@
             <div class="piece-label">Billboard / Directory</div>
             <h3 class="piece-title">Actax Billboard</h3>
             <p class="piece-desc">
-              Entrance signage for Suite 200, designed to be read from the corridor and street.
+              High-contrast suite directory for 200 N Jackson Ave — Actax listed alongside
+              neighboring practices, sized for readability from the corridor and street approach.
             </p>
             <span class="piece-cta">
               Open full PDF
