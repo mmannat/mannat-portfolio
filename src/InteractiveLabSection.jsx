@@ -364,7 +364,7 @@ function opBBox(op, measureCtx) {
         /* ignore */
       }
     }
-    const h = op.size || 24;
+    const h = Math.max(16, (op.size || 24) * 1.25);
     return { x: op.x, y: op.y, w, h };
   }
   return null;
@@ -936,6 +936,8 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
   const canvasRef = useRef(null);
   const frameRef = useRef(null);
   const textInputRef = useRef(null);
+  const textEditRef = useRef(null);
+  const placingTextRef = useRef(false);
   const ctxRef = useRef(null);
   const baselineRef = useRef(null);
   const bakedRef = useRef(false);
@@ -956,6 +958,10 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
   useEffect(() => {
     selectedIdxRef.current = selectedIdx;
   }, [selectedIdx]);
+
+  useEffect(() => {
+    textEditRef.current = textEdit;
+  }, [textEdit]);
 
   const syncState = useCallback(() => {
     setCanUndo(opsRef.current.length > 0 || !!preClearSnapRef.current || editUndoRef.current.length > 0);
@@ -1101,7 +1107,9 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
 
   const clearCanvas = useCallback(() => {
     // Dismiss any in-progress text box (Clear was leaving it on screen).
+    textEditRef.current = null;
     setTextEdit(null);
+    placingTextRef.current = false;
     setSelectedIdx(null);
     selectDragRef.current = null;
     const hasAnything = opsRef.current.length > 0 || bakedRef.current;
@@ -1186,7 +1194,9 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
       const op = opsRef.current[i];
       if (!isSelectable(op)) continue;
       const box = opBBox(op, ctxRef.current);
-      if (pointInBBox(p, box, 8)) return i;
+      // Text hit targets are thin — give them extra tap slop.
+      const slop = op.type === "text" ? 16 : 8;
+      if (pointInBBox(p, box, slop)) return i;
     }
     return null;
   }
@@ -1241,7 +1251,7 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
     const canvasRect = canvasRef.current.getBoundingClientRect();
     const fontPx = textFontPx(brush);
     const dispFontPx = fontPx * (canvasRect.width / CANVAS_W);
-    setTextEdit({
+    const next = {
       cx: p.x,
       cy: p.y,
       dispX: e.clientX - frameRect.left,
@@ -1249,50 +1259,81 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
       value: "",
       fontPx,
       dispFontPx,
-    });
+    };
+    textEditRef.current = next;
+    setTextEdit(next);
     setTimeout(() => {
       const el = textInputRef.current;
-      if (!el) return;
+      if (!el || !textEditRef.current) return;
       el.focus({ preventScroll: true });
       // Keep the text box above the on-screen keyboard on mobile.
       el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
       // Extra nudge after the keyboard opens.
-      setTimeout(() => el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" }), 350);
+      setTimeout(() => {
+        if (textEditRef.current) el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+      }, 350);
     }, 60);
   }
 
   async function placeText() {
-    const t = textEdit;
+    if (placingTextRef.current) return;
+    const t = textEditRef.current;
     if (!t) return;
+    placingTextRef.current = true;
     const val = (t.value || "").slice(0, TEXT_MAX);
-    if (!val.trim()) {
-      setTextEdit(null);
-      return;
-    }
-    try {
-      if (document.fonts && document.fonts.load) {
-        await document.fonts.load(`${t.fontPx}px "${textFont}"`);
-      }
-    } catch {
-      /* fall back to whatever is available */
-    }
-    const op = { type: "text", text: val, x: t.cx, y: t.cy, color, font: textFont, size: t.fontPx };
+    // Always close the editor first so the canvas never stays locked.
+    textEditRef.current = null;
     setTextEdit(null);
-    commit(op);
+    try {
+      if (!val.trim()) return;
+      try {
+        if (document.fonts && document.fonts.load) {
+          // Don't hang forever if a webfont never resolves (mobile / flaky network).
+          await Promise.race([
+            document.fonts.load(`${t.fontPx}px "${textFont}"`),
+            new Promise((resolve) => setTimeout(resolve, 450)),
+          ]);
+        }
+      } catch {
+        /* fall back to whatever is available */
+      }
+      commit({ type: "text", text: val, x: t.cx, y: t.cy, color, font: textFont, size: t.fontPx });
+      setAnnounce("Text placed");
+    } finally {
+      placingTextRef.current = false;
+    }
+  }
+
+  function cancelTextEdit() {
+    textEditRef.current = null;
+    setTextEdit(null);
+    placingTextRef.current = false;
   }
 
   function handleTextKey(e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      placeText();
+      e.stopPropagation();
+      void placeText();
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setTextEdit(null);
+      e.stopPropagation();
+      cancelTextEdit();
     }
   }
 
+  function handleTextBlur() {
+    // Mobile keyboards often lack a clear Enter — blur commits/dismisses so the canvas unlocks.
+    void placeText();
+  }
+
   function handlePointerDown(e) {
-    if (textEdit) return; // finish text first
+    // Finish or dismiss any open text box before other tools can run.
+    if (textEditRef.current) {
+      e.preventDefault();
+      void placeText();
+      return;
+    }
     if (tool === "text") {
       e.preventDefault();
       openTextEditor(e);
@@ -1463,13 +1504,17 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
 
   // ---- tool selection + announcements ----
   function selectTool(id, label) {
+    // Switching tools must never leave a stuck text editor blocking the canvas.
+    if (textEditRef.current) void placeText();
     setTool(id);
     setAnnounce(label);
     setHelpOpen(false);
+    drawingRef.current = false;
+    curOpRef.current = null;
+    selectDragRef.current = null;
     if (id !== "select") {
       selectedIdxRef.current = null;
       setSelectedIdx(null);
-      selectDragRef.current = null;
       redrawAll();
     }
   }
@@ -1711,9 +1756,23 @@ export function InteractiveLabSection({ apiBase = API_BASE }) {
                 className="lym-text-editor"
                 value={textEdit.value}
                 maxLength={TEXT_MAX}
-                placeholder="Type, Enter to place"
-                onChange={(e) => setTextEdit((t) => ({ ...t, value: e.target.value }))}
+                placeholder="Type here — tap away or Enter to place"
+                enterKeyHint="done"
+                inputMode="text"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTextEdit((t) => {
+                    if (!t) return t;
+                    const next = { ...t, value };
+                    textEditRef.current = next;
+                    return next;
+                  });
+                }}
                 onKeyDown={handleTextKey}
+                onBlur={handleTextBlur}
                 style={{ left: textEdit.dispX, top: textEdit.dispY, fontFamily: FONTS.find((f) => f.name === textFont)?.css, fontSize: Math.max(14, textEdit.dispFontPx), color }}
               />
             ) : null}
