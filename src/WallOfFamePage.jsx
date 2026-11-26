@@ -431,11 +431,11 @@ export function WallOfFamePage({ apiBase = API_BASE }) {
       </div>
 
       <section className="wall-hero" aria-label="The Guest Wall intro">
-        <Link to="/" className="wall-back">
+        <Link to={{ pathname: "/", search: "?section=interactive-lab" }} className="wall-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Back to portfolio
+          Back to canvas
         </Link>
 
         <div className="wall-hero-inner" style={heroMotion}>

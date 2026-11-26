@@ -2412,6 +2412,8 @@ function projectBadgeAccent(badge) {
       return { border: "1px solid rgba(217, 70, 239, 0.45)", color: "rgba(245, 208, 254, 0.95)", glow: "rgba(217, 70, 239, 0.3)" };
     case "Web Design":
       return { border: "1px solid rgba(45, 212, 191, 0.45)", color: "rgba(153, 246, 228, 0.95)", glow: "rgba(45, 212, 191, 0.28)" };
+    case "Guestbook":
+      return { border: "1px solid rgba(232, 121, 249, 0.5)", color: "rgba(245, 208, 254, 0.98)", glow: "rgba(217, 70, 239, 0.32)" };
     default:
       return { border: "1px solid rgba(148, 163, 184, 0.35)", color: "rgba(226, 232, 240, 0.9)", glow: "rgba(148, 163, 184, 0.2)" };
   }
@@ -2435,6 +2437,8 @@ function projectDeviconClass(badge) {
       return "devicon-canva-original";
     case "Web Design":
       return "devicon-html5-plain";
+    case "Guestbook":
+      return "devicon-mongodb-plain";
     default:
       return "devicon-github-original";
   }
@@ -2476,6 +2480,13 @@ function Projects() {
   }, []);
 
   const items = [
+    {
+      name: "The Guest Wall",
+      badge: "Guestbook",
+      desc: "Interactive doodle guestbook — leave a mark and explore every visitor’s art on the wall.",
+      tags: ["React", "Node.js", "MongoDB"],
+      to: "/wall",
+    },
     {
       name: "The Website Gallery",
       badge: "Web Design",
@@ -2552,53 +2563,65 @@ function Projects() {
           {items.map((p) => {
             const accent = projectBadgeAccent(p.badge);
             const iconClass = projectDeviconClass(p.badge);
+            const cardStyle = { ...styles.prCard, ...(layout === "mobile" ? styles.prCardMobile : null) };
+            const cardInner = (
+              <>
+                <div
+                  style={{
+                    ...styles.prIconShell,
+                    ...(layout === "mobile" ? styles.prIconShellMobile : null),
+                    boxShadow: `0 0 28px ${accent.glow}, 0 12px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)`,
+                  }}
+                >
+                  <i className={`devicon ${iconClass} colored`} style={styles.prIconDev} aria-hidden />
+                </div>
+                <div style={styles.prCardMain}>
+                  <div
+                    style={{
+                      ...styles.prTitleRow,
+                      ...(layout === "mobile" ? styles.prTitleRowMobile : null),
+                    }}
+                  >
+                    <h3 style={{ ...styles.prCardTitle, ...(layout === "mobile" ? styles.prCardTitleMobile : null) }}>{p.name}</h3>
+                    <div
+                      style={{
+                        ...styles.prBadge,
+                        border: accent.border,
+                        color: accent.color,
+                        ...(layout === "mobile" ? styles.prBadgeMobile : null),
+                      }}
+                    >
+                      {p.badge}
+                    </div>
+                  </div>
+                  <p style={{ ...styles.prCardDesc, ...(layout === "mobile" ? styles.prCardDescMobile : null) }}>{p.desc}</p>
+                  <div style={styles.prCardFooter}>
+                    <div style={styles.prTags}>
+                      {p.tags.map((t) => (
+                        <span key={t} style={styles.prTag}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <span style={styles.prViewLink}>{p.to ? "Enter Wall →" : "View Project →"}</span>
+                  </div>
+                </div>
+              </>
+            );
             return (
               <div key={p.name} style={{ ...styles.prRow, ...(layout === "mobile" ? styles.prRowMobile : null) }}>
                 <div style={{ ...styles.prGutter, width: gutterW }}>
                   <div style={styles.prNode} aria-hidden />
                 </div>
-                <a href={p.href} target="_blank" rel="noreferrer" style={{ ...styles.prCard, ...(layout === "mobile" ? styles.prCardMobile : null) }} className="pr-project-card">
-                  <div
-                    style={{
-                      ...styles.prIconShell,
-                      ...(layout === "mobile" ? styles.prIconShellMobile : null),
-                      boxShadow: `0 0 28px ${accent.glow}, 0 12px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)`,
-                    }}
-                  >
-                    <i className={`devicon ${iconClass} colored`} style={styles.prIconDev} aria-hidden />
-                  </div>
-                  <div style={styles.prCardMain}>
-                    <div
-                      style={{
-                        ...styles.prTitleRow,
-                        ...(layout === "mobile" ? styles.prTitleRowMobile : null),
-                      }}
-                    >
-                      <h3 style={{ ...styles.prCardTitle, ...(layout === "mobile" ? styles.prCardTitleMobile : null) }}>{p.name}</h3>
-                      <div
-                        style={{
-                          ...styles.prBadge,
-                          border: accent.border,
-                          color: accent.color,
-                          ...(layout === "mobile" ? styles.prBadgeMobile : null),
-                        }}
-                      >
-                        {p.badge}
-                      </div>
-                    </div>
-                    <p style={{ ...styles.prCardDesc, ...(layout === "mobile" ? styles.prCardDescMobile : null) }}>{p.desc}</p>
-                    <div style={styles.prCardFooter}>
-                      <div style={styles.prTags}>
-                        {p.tags.map((t) => (
-                          <span key={t} style={styles.prTag}>
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                      <span style={styles.prViewLink}>View Project →</span>
-                    </div>
-                  </div>
-                </a>
+                {p.to ? (
+                  <Link to={p.to} style={cardStyle} className="pr-project-card">
+                    {cardInner}
+                  </Link>
+                ) : (
+                  <a href={p.href} target="_blank" rel="noreferrer" style={cardStyle} className="pr-project-card">
+                    {cardInner}
+                  </a>
+                )}
               </div>
             );
           })}
