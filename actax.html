@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Actax: Print &amp; Outdoor Marketing — Mannat</title>
+    <title>Actax — Marketing Case Study — Mannat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -20,20 +20,16 @@
         --bg: #0b1426;
         --card: #111e36;
         --ink: #e8eef8;
-        --muted: rgba(196, 210, 230, 0.78);
-        --line: rgba(92, 200, 224, 0.14);
-        --radius: 16px;
+        --muted: rgba(196, 210, 230, 0.8);
+        --glow-g: rgba(122, 179, 86, 0.4);
+        --glow-b: rgba(34, 96, 168, 0.4);
+        --stroke: rgba(92, 200, 224, 0.18);
+        --radius: 22px;
       }
 
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
 
-      html {
-        scroll-behavior: smooth;
-      }
+      html { scroll-behavior: smooth; }
 
       body {
         min-height: 100vh;
@@ -41,34 +37,105 @@
         color: var(--ink);
         background: var(--bg);
         -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+      }
+
+      .bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+        background:
+          radial-gradient(1100px 560px at 50% -8%, rgba(31, 59, 112, 0.45), transparent 58%),
+          var(--bg);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(64px);
+        opacity: 0.45;
+      }
+      .blob-a {
+        width: 440px; height: 440px; left: -90px; top: -40px;
+        background: radial-gradient(circle, rgba(122, 179, 86, 0.5), transparent 70%);
+        animation: drift1 18s ease-in-out infinite;
+      }
+      .blob-b {
+        width: 400px; height: 400px; right: -80px; top: 100px;
+        background: radial-gradient(circle, rgba(34, 96, 168, 0.5), transparent 70%);
+        animation: drift2 22s ease-in-out infinite;
+      }
+      .blob-c {
+        width: 360px; height: 360px; left: 18%; bottom: -90px;
+        background: radial-gradient(circle, rgba(92, 200, 224, 0.35), transparent 70%);
+        animation: drift3 20s ease-in-out infinite;
+      }
+      .blob-d {
+        width: 300px; height: 300px; right: 22%; bottom: 50px;
+        background: radial-gradient(circle, rgba(78, 154, 52, 0.35), transparent 70%);
+        animation: drift1 26s ease-in-out infinite reverse;
+      }
+
+      @keyframes drift1 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(40px, 30px) scale(1.1); } }
+      @keyframes drift2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-50px, 40px) scale(1.08); } }
+      @keyframes drift3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, -40px) scale(1.12); } }
+
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(22px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes softGlow {
+        0%, 100% { box-shadow: 0 0 0 0 transparent, 0 18px 40px rgba(0, 0, 0, 0.35); }
+        50% { box-shadow: 0 0 28px rgba(122, 179, 86, 0.12), 0 18px 40px rgba(0, 0, 0, 0.35); }
       }
 
       .wrap {
-        max-width: 1080px;
+        position: relative;
+        z-index: 1;
+        max-width: 1180px;
         margin: 0 auto;
-        padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 28px) 72px;
+        padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 32px) 72px;
       }
 
-      .back {
+      .back-btn {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-size: 14px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 13.5px;
         font-weight: 600;
-        color: var(--leaf);
         text-decoration: none;
-        transition: color 0.15s ease, transform 0.15s ease;
+        color: rgba(236, 245, 232, 0.95);
+        border: 1px solid rgba(122, 179, 86, 0.35);
+        background: rgba(17, 30, 54, 0.72);
+        backdrop-filter: blur(8px);
+        transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.2s ease;
+        animation: rise 0.55s ease both;
       }
-      .back:hover {
-        color: #9ccc6e;
+      .back-btn:hover {
+        border-color: rgba(122, 179, 86, 0.7);
         transform: translateX(-2px);
+        box-shadow: 0 0 18px rgba(122, 179, 86, 0.2);
+        color: #fff;
+      }
+
+      .hero {
+        margin-top: clamp(36px, 7vw, 72px);
+        display: grid;
+        gap: clamp(28px, 5vw, 48px);
+        align-items: end;
+        animation: rise 0.7s ease 0.08s both;
+      }
+      @media (min-width: 900px) {
+        .hero { grid-template-columns: 1.15fr 0.85fr; }
       }
 
       .eyebrow {
-        margin-top: clamp(36px, 6vw, 56px);
         font-size: 12.5px;
-        font-weight: 600;
-        letter-spacing: 0.14em;
+        font-weight: 700;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
         color: var(--leaf);
       }
@@ -76,13 +143,13 @@
       h1 {
         margin-top: 12px;
         font-family: "Plus Jakarta Sans", Inter, sans-serif;
-        font-size: clamp(30px, 5.4vw, 46px);
+        font-size: clamp(42px, 8vw, 78px);
         font-weight: 800;
+        line-height: 0.98;
         letter-spacing: -0.03em;
-        line-height: 1.12;
-        color: #f4f7fb;
+        color: #f8fafc;
       }
-      .wordmark {
+      .title-grad {
         background: linear-gradient(115deg, #7ab356 0%, #2260a8 100%);
         -webkit-background-clip: text;
         background-clip: text;
@@ -90,282 +157,378 @@
         color: transparent;
       }
 
-      .intro {
+      .lead {
         margin-top: 18px;
-        max-width: 42rem;
-        font-size: clamp(15px, 2.2vw, 17px);
+        max-width: 34rem;
+        font-size: clamp(15px, 2.4vw, 17.5px);
         line-height: 1.65;
         color: var(--muted);
       }
 
-      h2 {
-        font-family: "Plus Jakarta Sans", Inter, sans-serif;
-        font-size: clamp(22px, 3.2vw, 28px);
-        font-weight: 750;
-        letter-spacing: -0.025em;
-        line-height: 1.2;
-        color: #f1f5f9;
-      }
-
-      h3 {
-        font-family: "Plus Jakarta Sans", Inter, sans-serif;
-        font-size: 17px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: #f1f5f9;
-      }
-
-      p {
-        font-size: 15px;
-        line-height: 1.65;
-        color: var(--muted);
-      }
-
-      .section {
-        margin-top: clamp(44px, 7vw, 68px);
-      }
-
-      /* Snapshot */
-      .snapshot {
-        margin-top: clamp(28px, 5vw, 40px);
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        padding: 18px;
-        border-radius: var(--radius);
-        background: var(--card);
-        border: 1px solid var(--line);
-      }
-      @media (min-width: 720px) {
-        .snapshot {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 8px 16px;
-          padding: 20px 22px;
-        }
-      }
-      .snap-item {
-        display: grid;
-        gap: 4px;
-        padding: 6px 4px;
-      }
-      .snap-label {
-        font-size: 11.5px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--cyan);
-      }
-      .snap-value {
-        font-size: 14.5px;
-        font-weight: 600;
-        color: #e8eef8;
-      }
-
-      /* Approach */
-      .approach {
-        margin-top: 18px;
-        display: grid;
-        gap: 12px;
-      }
-      @media (min-width: 800px) {
-        .approach {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 14px;
-        }
-      }
-      .approach-card {
-        padding: 18px 18px 20px;
-        border-radius: var(--radius);
-        background: var(--card);
-        border: 1px solid var(--line);
-        transition: border-color 0.18s ease, transform 0.18s ease;
-      }
-      .approach-card:hover {
-        border-color: rgba(122, 179, 86, 0.35);
-        transform: translateY(-2px);
-      }
-      .approach-num {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 26px;
-        height: 26px;
-        margin-bottom: 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #ecfdf3;
-        background: rgba(78, 154, 52, 0.28);
-        border: 1px solid rgba(122, 179, 86, 0.35);
-      }
-      .approach-card h3 {
-        margin-bottom: 8px;
-      }
-      .approach-card p {
-        font-size: 14px;
-      }
-
-      /* Work */
-      .work-lead {
-        margin-top: 10px;
-        margin-bottom: 22px;
-        max-width: 36rem;
-      }
-
-      .piece {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-        border-radius: var(--radius);
-        overflow: hidden;
-        background: var(--card);
-        border: 1px solid var(--line);
-        transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-      }
-      .piece:hover {
-        border-color: rgba(122, 179, 86, 0.4);
-        transform: translateY(-3px);
-        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
-      }
-
-      .piece-full {
-        margin-bottom: 14px;
-      }
-
-      .piece-media {
-        background: #0a1222;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-      }
-      .piece-media img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        display: block;
-        transition: transform 0.35s ease;
-      }
-      .piece:hover .piece-media img {
-        transform: scale(1.015);
-      }
-
-      .piece-full .piece-media {
-        padding: 18px 16px;
-        min-height: 140px;
-      }
-      .piece-full .piece-media img {
-        max-height: 220px;
-        width: auto;
-        max-width: 100%;
-        margin: 0 auto;
-        object-fit: contain;
-      }
-
-      .piece-body {
-        padding: 16px 18px 18px;
-        display: grid;
-        gap: 6px;
-      }
-      .piece-label {
-        font-size: 11.5px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--cyan);
-      }
-      .piece-cta {
-        margin-top: 6px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13.5px;
-        font-weight: 600;
-        color: var(--leaf);
-      }
-      .piece:hover .piece-cta {
-        color: #9ccc6e;
-      }
-
-      .grid-2 {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
-        align-items: stretch;
-      }
-      @media (min-width: 720px) {
-        .grid-2 {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-
-      /* Shared media frame so postcard (and grid) tops align */
-      .grid-2 .piece {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-      }
-      .grid-2 .piece-media {
-        aspect-ratio: 4 / 3;
-        flex-shrink: 0;
-        padding: 14px;
-      }
-      .grid-2 .piece-body {
-        flex: 1;
-      }
-
-      .next-card,
-      .sites-card {
-        margin-top: 16px;
-        padding: 20px 22px;
-        border-radius: var(--radius);
-        background: var(--card);
-        border: 1px solid var(--line);
-      }
-      .next-card p {
-        margin-top: 10px;
-        max-width: 40rem;
-      }
-
-      .site-links {
-        margin-top: 14px;
+      .meta {
+        margin-top: 22px;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
       }
-      .site-links a {
+      .chip {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        padding: 9px 14px;
+        padding: 7px 13px;
         border-radius: 999px;
-        font-size: 13.5px;
+        font-size: 12.5px;
         font-weight: 600;
-        text-decoration: none;
-        color: #ecfdf3;
-        background: rgba(78, 154, 52, 0.22);
-        border: 1px solid rgba(122, 179, 86, 0.35);
-        transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+        color: rgba(236, 252, 231, 0.95);
+        background: rgba(78, 154, 52, 0.16);
+        border: 1px solid rgba(122, 179, 86, 0.3);
       }
-      .site-links a:hover {
-        background: rgba(78, 154, 52, 0.34);
-        border-color: rgba(122, 179, 86, 0.55);
-        transform: translateY(-1px);
+      .chip-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--leaf);
+        box-shadow: 0 0 10px var(--glow-g);
+      }
+
+      .hero-panel {
+        padding: 22px 22px 24px;
+        border-radius: var(--radius);
+        background: var(--card);
+        border: 1px solid var(--stroke);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 20px 48px rgba(0, 0, 0, 0.35);
+        animation: softGlow 6s ease-in-out infinite;
+      }
+      .hero-panel h2 {
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--cyan);
+      }
+      .hero-panel p {
+        margin-top: 12px;
+        font-size: 14.5px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      .hero-list {
+        margin-top: 16px;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+      .hero-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 13.5px;
+        color: rgba(210, 222, 240, 0.92);
+      }
+      .hero-list li::before {
+        content: "";
+        flex-shrink: 0;
+        width: 8px; height: 8px;
+        margin-top: 6px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--leaf), var(--blue));
+        box-shadow: 0 0 10px var(--glow-g);
+      }
+
+      .section {
+        margin-top: clamp(56px, 9vw, 96px);
+        animation: rise 0.7s ease both;
+      }
+      .section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px 24px;
+        margin-bottom: 22px;
+      }
+      .section-kicker {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--cyan);
+      }
+      .section-title {
+        margin-top: 8px;
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: clamp(26px, 4.5vw, 40px);
+        font-weight: 750;
+        letter-spacing: -0.025em;
+        color: #f1f5f9;
+      }
+      .section-note {
+        max-width: 280px;
+        font-size: 13.5px;
+        line-height: 1.5;
+        color: var(--muted);
+        text-align: right;
+      }
+      @media (max-width: 640px) {
+        .section-note { text-align: left; max-width: none; }
+      }
+
+      .featured {
+        display: grid;
+        gap: 0;
+        border-radius: calc(var(--radius) + 4px);
+        overflow: hidden;
+        background: var(--card);
+        border: 1px solid var(--stroke);
+        box-shadow: 0 24px 56px rgba(0, 0, 0, 0.4);
+        transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+        text-decoration: none;
+        color: inherit;
+      }
+      .featured:hover {
+        transform: translateY(-4px);
+        border-color: rgba(122, 179, 86, 0.45);
+        box-shadow: 0 28px 64px rgba(0, 0, 0, 0.45), 0 0 36px rgba(122, 179, 86, 0.14);
+      }
+      .featured-media {
+        position: relative;
+        background: #0a1222;
+        min-height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 28px 22px;
+        overflow: hidden;
+      }
+      .featured-media img {
+        width: 100%;
+        max-height: 240px;
+        object-fit: contain;
+        object-position: center;
+        display: block;
+        transition: transform 0.55s ease;
+      }
+      .featured:hover .featured-media img { transform: scale(1.02); }
+      .featured-body {
+        padding: clamp(20px, 3.5vw, 30px);
+        display: grid;
+        gap: 10px;
+        background: linear-gradient(180deg, rgba(17, 30, 54, 0.98), rgba(11, 20, 38, 0.99));
+      }
+      @media (min-width: 900px) {
+        .featured {
+          grid-template-columns: 1.35fr 0.9fr;
+          align-items: stretch;
+        }
+        .featured-media { min-height: 280px; }
+        .featured-body { align-content: center; }
+      }
+
+      .piece-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--cyan);
+      }
+      .piece-title {
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: clamp(22px, 3.2vw, 30px);
+        font-weight: 750;
+        letter-spacing: -0.02em;
+        color: #f8fafc;
+      }
+      .piece-desc {
+        font-size: 14.5px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      .piece-cta {
+        margin-top: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--leaf);
+      }
+      .piece-cta svg { transition: transform 0.2s ease; }
+      .featured:hover .piece-cta svg,
+      .card:hover .piece-cta svg { transform: translateX(3px); }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      @media (min-width: 700px) {
+        .gallery { grid-template-columns: repeat(2, 1fr); }
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        border-radius: var(--radius);
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        background: var(--card);
+        border: 1px solid var(--stroke);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 14px 36px rgba(0, 0, 0, 0.32);
+        transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(34, 96, 168, 0.5);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 22px 48px rgba(0, 0, 0, 0.4), 0 0 28px rgba(34, 96, 168, 0.16);
+      }
+      .card.span-full { grid-column: 1 / -1; }
+      @media (min-width: 700px) {
+        .card.span-full {
+          display: grid;
+          grid-template-columns: 0.85fr 1.15fr;
+        }
+      }
+
+      .card-media {
+        position: relative;
+        background: #0a1222;
+        aspect-ratio: 16 / 11;
+        overflow: hidden;
+      }
+      .card.portrait .card-media {
+        aspect-ratio: 3 / 4;
+        max-height: 520px;
+      }
+      .card.span-full.portrait .card-media {
+        aspect-ratio: 4 / 5;
+        max-height: 560px;
+      }
+      .card.span-full.landscape .card-media {
+        aspect-ratio: 16 / 9;
+        max-height: none;
+        min-height: 260px;
+      }
+      @media (min-width: 700px) {
+        .card.span-full.portrait .card-media {
+          aspect-ratio: auto;
+          min-height: 420px;
+          max-height: none;
+        }
+        .card.span-full.landscape {
+          display: grid;
+          grid-template-columns: 1.35fr 0.9fr;
+        }
+        .card.span-full.landscape .card-media {
+          aspect-ratio: auto;
+          min-height: 320px;
+        }
+      }
+      .card-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        display: block;
+        padding: 12px;
+        transition: transform 0.5s ease;
+      }
+      .card:hover .card-media img { transform: scale(1.04); }
+
+      .card-body {
+        padding: 18px 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+        background: linear-gradient(180deg, rgba(17, 30, 54, 0.95), rgba(11, 20, 38, 0.98));
+      }
+      .card.span-full .card-body {
+        justify-content: center;
+        padding: clamp(22px, 4vw, 36px);
+      }
+
+      .view-tag {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        padding: 6px 11px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #ecfdf5;
+        background: rgba(11, 20, 38, 0.78);
+        border: 1px solid rgba(122, 179, 86, 0.4);
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+      .card:hover .view-tag,
+      .featured:hover .view-tag { opacity: 1; transform: translateY(0); }
+
+      .about {
+        margin-top: clamp(56px, 9vw, 88px);
+        padding: clamp(24px, 4vw, 36px);
+        border-radius: calc(var(--radius) + 2px);
+        background: var(--card);
+        border: 1px solid var(--stroke);
+        display: grid;
+        gap: 18px;
+      }
+      @media (min-width: 760px) {
+        .about { grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+      }
+      .about h2 {
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: clamp(22px, 3.5vw, 30px);
+        font-weight: 750;
+        letter-spacing: -0.02em;
+      }
+      .about p {
+        margin-top: 10px;
+        font-size: 14.5px;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+      .about-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .about-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        color: #ecfdf5;
+        background: rgba(78, 154, 52, 0.28);
+        border: 1px solid rgba(122, 179, 86, 0.4);
+        transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.15s ease;
+      }
+      .about-links a:hover {
+        transform: translateY(-2px);
+        background: rgba(78, 154, 52, 0.4);
+        box-shadow: 0 8px 22px rgba(78, 154, 52, 0.22);
       }
 
       footer {
-        margin-top: 56px;
-        padding-top: 20px;
+        margin-top: 64px;
+        padding-top: 22px;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         text-align: center;
         font-size: 12px;
-        color: rgba(148, 163, 184, 0.65);
+        color: rgba(148, 163, 184, 0.7);
       }
 
       @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
+        *, *::before, *::after {
           animation: none !important;
           transition: none !important;
         }
@@ -373,87 +536,68 @@
     </style>
   </head>
   <body>
+    <div class="bg" aria-hidden="true">
+      <div class="blob blob-a"></div>
+      <div class="blob blob-b"></div>
+      <div class="blob blob-c"></div>
+      <div class="blob blob-d"></div>
+    </div>
+
     <div class="wrap">
-      <a class="back" href="marketing.html">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+      <a class="back-btn" href="marketing.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Back to Marketing Projects
       </a>
 
-      <header>
-        <div class="eyebrow">Marketing &amp; Brand Design</div>
-        <h1><span class="wordmark">Actax</span>: Print &amp; Outdoor Marketing</h1>
-        <p class="intro">
-          I handle marketing for Actax, a San Jose tax and insurance practice. This case study
-          covers five pieces I designed to help clients find services, hours, and contact details
-          quickly.
-        </p>
+      <header class="hero">
+        <div>
+          <div class="eyebrow">Marketing Case Study</div>
+          <h1><span class="title-grad">Actax</span></h1>
+          <p class="lead">
+            Print and outdoor marketing for a San Jose tax &amp; insurance practice —
+            directory signage, postcards, and banners designed to keep contact details
+            and services clear at a glance.
+          </p>
+          <div class="meta">
+            <span class="chip"><span class="chip-dot" aria-hidden="true"></span>Print &amp; outdoor</span>
+            <span class="chip"><span class="chip-dot" aria-hidden="true"></span>Brand system</span>
+            <span class="chip"><span class="chip-dot" aria-hidden="true"></span>Five deliverables</span>
+          </div>
+        </div>
+        <aside class="hero-panel">
+          <h2>Project focus</h2>
+          <p>
+            Built around Actax&apos;s green-and-blue brand marks so every piece feels
+            consistent across tax, insurance, and Covered California outreach.
+          </p>
+          <ul class="hero-list">
+            <li>Building directory / outdoor signage</li>
+            <li>Service &amp; insurance postcards</li>
+            <li>Business &amp; Covered California banners</li>
+          </ul>
+        </aside>
       </header>
 
-      <section class="snapshot" aria-label="Project snapshot">
-        <div class="snap-item">
-          <div class="snap-label">Role</div>
-          <div class="snap-value">Marketing &amp; design</div>
+      <section class="section" aria-labelledby="featured-heading">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Featured</div>
+            <h2 class="section-title" id="featured-heading">Outdoor presence</h2>
+          </div>
+          <p class="section-note">Large-format directory artwork for the suite entrance — click any piece to open the full PDF.</p>
         </div>
-        <div class="snap-item">
-          <div class="snap-label">Client</div>
-          <div class="snap-value">Actax, San Jose</div>
-        </div>
-        <div class="snap-item">
-          <div class="snap-label">Deliverables</div>
-          <div class="snap-value">5 print and outdoor pieces</div>
-        </div>
-        <div class="snap-item">
-          <div class="snap-label">Year</div>
-          <div class="snap-value">2026</div>
-        </div>
-      </section>
-
-      <section class="section" aria-labelledby="challenge-heading">
-        <h2 id="challenge-heading">The challenge</h2>
-        <p style="margin-top: 12px; max-width: 42rem">
-          Actax serves clients in tax, insurance, and Covered California enrollment. Each has its
-          own audience and season. The practice needed print materials that looked like one brand
-          and made the next step obvious: call, scan, or walk in.
-        </p>
-      </section>
-
-      <section class="section" aria-labelledby="approach-heading">
-        <h2 id="approach-heading">My approach</h2>
-        <div class="approach">
-          <article class="approach-card">
-            <div class="approach-num" aria-hidden="true">1</div>
-            <h3>One brand system</h3>
-            <p>I carried Actax&apos;s green-and-blue identity across every format.</p>
-          </article>
-          <article class="approach-card">
-            <div class="approach-num" aria-hidden="true">2</div>
-            <h3>Designed for where it&apos;s used</h3>
-            <p>
-              Signage reads from the corridor and street. Postcards work as handouts and mailers.
-              Banners suit storefront and events.
-            </p>
-          </article>
-          <article class="approach-card">
-            <div class="approach-num" aria-hidden="true">3</div>
-            <h3>A clear next step</h3>
-            <p>Each piece leads with the phone number and a QR code.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" aria-labelledby="work-heading">
-        <h2 id="work-heading">The work</h2>
-        <p class="work-lead">Five print and outdoor pieces. Click any card to open the full PDF.</p>
 
         <a
-          class="piece piece-full"
+          class="featured"
           href="Actax%20Billboard.pdf"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Open Actax Billboard PDF"
         >
-          <div class="piece-media">
+          <div class="featured-media">
+            <span class="view-tag">View PDF</span>
             <img
               src="actax-previews/billboard-actax-row.jpg"
               alt="Actax row from the Suite 200 building directory signage"
@@ -462,22 +606,41 @@
               loading="eager"
             />
           </div>
-          <div class="piece-body">
-            <div class="piece-label">Building directory</div>
-            <h3>Directory signage</h3>
-            <p>Entrance signage for Suite 200, designed to be read from the corridor and street.</p>
-            <span class="piece-cta">Open full PDF →</span>
+          <div class="featured-body">
+            <div class="piece-label">Billboard / Directory</div>
+            <h3 class="piece-title">Actax Billboard</h3>
+            <p class="piece-desc">
+              Entrance signage for Suite 200, designed to be read from the corridor and street.
+            </p>
+            <span class="piece-cta">
+              Open full PDF
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
           </div>
         </a>
+      </section>
 
-        <div class="grid-2">
+      <section class="section" aria-labelledby="print-heading">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Print suite</div>
+            <h2 class="section-title" id="print-heading">Postcards &amp; banners</h2>
+          </div>
+          <p class="section-note">Handouts and display pieces for tax season, insurance enrollment, and Covered California outreach.</p>
+        </div>
+
+        <div class="gallery">
           <a
-            class="piece"
+            class="card"
             href="Actax%20Insurance%20PostCard.pdf"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Open Actax Insurance Postcard PDF"
           >
-            <div class="piece-media">
+            <div class="card-media">
+              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/insurance-postcard.jpg"
                 alt="Actax Insurance postcard for Covered California enrollment"
@@ -486,19 +649,31 @@
                 loading="lazy"
               />
             </div>
-            <div class="piece-body">
+            <div class="card-body">
               <div class="piece-label">Postcard</div>
-              <h3>Insurance postcard</h3>
-              <p>
+              <h3 class="piece-title">Insurance Postcard</h3>
+              <p class="piece-desc">
                 Covered California enrollment and coverage offer, with phone, QR code, and service
                 icons up front.
               </p>
-              <span class="piece-cta">Open full PDF →</span>
+              <span class="piece-cta">
+                Open full PDF
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
             </div>
           </a>
 
-          <a class="piece" href="Actax%20PostCard.pdf" target="_blank" rel="noopener noreferrer">
-            <div class="piece-media">
+          <a
+            class="card"
+            href="Actax%20PostCard.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open Actax Postcard PDF"
+          >
+            <div class="card-media">
+              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/postcard.jpg"
                 alt="Actax tax services postcard with six-service grid and contact panel"
@@ -507,24 +682,31 @@
                 loading="lazy"
               />
             </div>
-            <div class="piece-body">
+            <div class="card-body">
               <div class="piece-label">Postcard</div>
-              <h3>Tax postcard</h3>
-              <p>
+              <h3 class="piece-title">Actax Postcard</h3>
+              <p class="piece-desc">
                 Six-service grid with hours, QR code, and contact details, made for handouts and
                 mailers.
               </p>
-              <span class="piece-cta">Open full PDF →</span>
+              <span class="piece-cta">
+                Open full PDF
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
             </div>
           </a>
 
           <a
-            class="piece banner"
+            class="card span-full portrait"
             href="Business%20Banner.pdf"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Open Business Banner PDF"
           >
-            <div class="piece-media">
+            <div class="card-media">
+              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/business-banner.jpg"
                 alt="Actax business banner combining tax and insurance messaging"
@@ -533,21 +715,30 @@
                 loading="lazy"
               />
             </div>
-            <div class="piece-body">
+            <div class="card-body">
               <div class="piece-label">Banner</div>
-              <h3>Business banner</h3>
-              <p>Combined tax and insurance message with a QR code for walk-up traffic.</p>
-              <span class="piece-cta">Open full PDF →</span>
+              <h3 class="piece-title">Business Banner</h3>
+              <p class="piece-desc">
+                Combined tax and insurance message with a QR code for walk-up traffic.
+              </p>
+              <span class="piece-cta">
+                Open full PDF
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
             </div>
           </a>
 
           <a
-            class="piece cc"
+            class="card span-full landscape"
             href="Covered%20California.pdf"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Open Covered California PDF"
           >
-            <div class="piece-media">
+            <div class="card-media">
+              <span class="view-tag">View PDF</span>
               <img
                 src="actax-previews/covered-california.jpg"
                 alt="Covered California enrollment banner with Free Assistance bar"
@@ -556,37 +747,41 @@
                 loading="lazy"
               />
             </div>
-            <div class="piece-body">
+            <div class="card-body">
               <div class="piece-label">Banner</div>
-              <h3>Covered California banner</h3>
-              <p>
+              <h3 class="piece-title">Covered California</h3>
+              <p class="piece-desc">
                 Enrollment banner with a bold Free Assistance bar and a phone number legible from a
                 distance.
               </p>
-              <span class="piece-cta">Open full PDF →</span>
+              <span class="piece-cta">
+                Open full PDF
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
             </div>
           </a>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="next-heading">
-        <h2 id="next-heading">Next step</h2>
-        <div class="next-card">
+      <section class="about" aria-labelledby="about-heading">
+        <div>
+          <h2 id="about-heading">About the brand</h2>
           <p>
-            Give each piece its own tracked QR code, so Actax can see which materials bring in the
-            most responses.
+            Actax is a San Jose tax and insurance practice. These pieces extend the brand&apos;s
+            green-and-blue identity into print and outdoor formats so clients can find services,
+            hours, and contact paths without digging through a website.
           </p>
         </div>
-      </section>
-
-      <section class="section" aria-labelledby="sites-heading">
-        <h2 id="sites-heading">Live sites</h2>
-        <div class="sites-card">
-          <div class="site-links">
+        <div>
+          <h2>Live sites</h2>
+          <p>
+            Related web properties for the same brand family — useful context alongside the print work.
+          </p>
+          <div class="about-links">
             <a href="https://actax.com" target="_blank" rel="noopener noreferrer">actax.com</a>
-            <a href="https://www.actaxinsurance.com" target="_blank" rel="noopener noreferrer"
-              >actaxinsurance.com</a
-            >
+            <a href="https://www.actaxinsurance.com" target="_blank" rel="noopener noreferrer">actaxinsurance.com</a>
           </div>
         </div>
       </section>
