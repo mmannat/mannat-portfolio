@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Android Zoo Directory — Case Study — Mannat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --amber: #e8a838;
+        --amber-soft: #f0c36a;
+        --teal: #2dd4bf;
+        --bg: #0b1426;
+        --card: #111e36;
+        --ink: #e8eef8;
+        --muted: rgba(196, 210, 230, 0.84);
+        --stroke: rgba(232, 168, 56, 0.22);
+        --radius: 20px;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        min-height: 100vh;
+        font-family: Inter, system-ui, sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+      }
+
+      .bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+        background:
+          radial-gradient(1000px 520px at 50% -10%, rgba(232, 168, 56, 0.18), transparent 58%),
+          radial-gradient(800px 480px at 90% 35%, rgba(45, 212, 191, 0.1), transparent 55%),
+          var(--bg);
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(64px);
+        opacity: 0.4;
+      }
+      .blob-a {
+        width: 420px; height: 420px; left: -80px; top: -30px;
+        background: radial-gradient(circle, rgba(232, 168, 56, 0.45), transparent 70%);
+      }
+      .blob-b {
+        width: 360px; height: 360px; right: -70px; top: 160px;
+        background: radial-gradient(circle, rgba(45, 212, 191, 0.3), transparent 70%);
+      }
+
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 28px) 80px;
+      }
+
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        color: rgba(255, 244, 220, 0.95);
+        border: 1px solid rgba(232, 168, 56, 0.35);
+        background: rgba(17, 30, 54, 0.72);
+        transition: border-color 0.18s ease, transform 0.18s ease;
+      }
+      .back:hover {
+        border-color: rgba(232, 168, 56, 0.7);
+        transform: translateX(-2px);
+        color: #fff;
+      }
+
+      .kicker {
+        margin-top: clamp(36px, 6vw, 56px);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--amber);
+      }
+
+      h1 {
+        margin-top: 12px;
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: clamp(32px, 5.6vw, 52px);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.08;
+        color: var(--amber-soft);
+      }
+      h1 .name { color: #f8fafc; }
+
+      .lead {
+        margin-top: 16px;
+        max-width: 42rem;
+        font-size: clamp(16px, 2.2vw, 18px);
+        line-height: 1.65;
+        color: var(--muted);
+      }
+
+      .section { margin-top: clamp(48px, 8vw, 80px); }
+
+      h2 {
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: clamp(26px, 3.8vw, 34px);
+        font-weight: 750;
+        letter-spacing: -0.02em;
+        color: var(--amber);
+        margin-bottom: 18px;
+      }
+
+      h3 {
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: clamp(18px, 2.4vw, 22px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #f1f5f9;
+      }
+
+      p, li {
+        font-size: 16px;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--stroke);
+        border-radius: var(--radius);
+      }
+
+      .overview {
+        display: grid;
+        gap: 16px;
+      }
+      @media (min-width: 860px) {
+        .overview {
+          grid-template-columns: 1.4fr 0.85fr;
+          gap: 20px;
+          align-items: start;
+        }
+      }
+      .overview-main { padding: 22px 22px 24px; display: grid; gap: 20px; }
+      .overview-main h3 { color: var(--teal); margin-bottom: 8px; }
+      .side {
+        padding: 22px;
+        display: grid;
+        gap: 18px;
+        background: linear-gradient(160deg, rgba(232, 168, 56, 0.12), rgba(17, 30, 54, 0.95));
+      }
+      .side-item { display: grid; gap: 4px; }
+      .side-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--amber);
+      }
+      .side-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #f1f5f9;
+        line-height: 1.45;
+      }
+
+      .approach {
+        display: grid;
+        gap: 14px;
+      }
+      @media (min-width: 800px) {
+        .approach { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+      .approach-card { padding: 20px 18px 22px; }
+      .approach-num {
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--amber);
+        line-height: 1;
+        margin-bottom: 10px;
+      }
+      .approach-card h3 { margin-bottom: 12px; }
+      .approach-card ol {
+        margin: 0;
+        padding-left: 1.15rem;
+        display: grid;
+        gap: 8px;
+      }
+      .approach-card li::marker { color: var(--amber); font-weight: 700; }
+
+      .contrib { padding: 22px 22px 24px; }
+      .contrib p { max-width: 48rem; }
+
+      .flow {
+        display: grid;
+        gap: 12px;
+      }
+      @media (min-width: 700px) {
+        .flow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+      .flow-card { padding: 18px 18px 20px; }
+      .flow-card h3 { margin-bottom: 8px; color: var(--teal); font-size: 17px; }
+
+      .animal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      @media (min-width: 700px) {
+        .animal-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      }
+      .animal-card {
+        padding: 14px 12px 16px;
+        text-align: center;
+        transition: transform 0.18s ease, border-color 0.18s ease;
+      }
+      .animal-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(45, 212, 191, 0.4);
+      }
+      .animal-card img {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 16px;
+        display: block;
+        margin: 0 auto 10px;
+        background: #0a1220;
+      }
+      .animal-card strong {
+        display: block;
+        font-size: 14px;
+        color: #f1f5f9;
+        margin-bottom: 4px;
+      }
+      .animal-card span {
+        font-size: 13px;
+        line-height: 1.4;
+        color: var(--muted);
+      }
+
+      .highlight {
+        display: grid;
+        gap: 16px;
+        margin-top: 18px;
+        padding: 18px;
+        align-items: center;
+      }
+      @media (min-width: 800px) {
+        .highlight {
+          grid-template-columns: 1fr 1.05fr;
+          gap: 24px;
+          padding: 22px;
+        }
+        .highlight.reverse { grid-template-columns: 1.05fr 1fr; }
+        .highlight.reverse .highlight-copy { order: 2; }
+        .highlight.reverse .shot { order: 1; }
+      }
+      .highlight-copy { display: grid; gap: 10px; }
+      .highlight-num {
+        font-family: "Plus Jakarta Sans", Inter, sans-serif;
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--amber);
+        letter-spacing: 0.04em;
+      }
+      .shot {
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--stroke);
+        background: #0a1220;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        min-height: 220px;
+      }
+      .shot img {
+        display: block;
+        max-width: 100%;
+        max-height: 280px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 12px;
+      }
+      .shot-pair {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .shot-pair img { max-height: 140px; }
+
+      .icon-list { display: grid; gap: 12px; }
+      .icon-row {
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 16px 16px 18px;
+      }
+      .icon-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: rgba(232, 168, 56, 0.14);
+        border: 1px solid rgba(232, 168, 56, 0.3);
+        color: var(--amber-soft);
+      }
+      .icon-mark.teal {
+        background: rgba(45, 212, 191, 0.12);
+        border-color: rgba(45, 212, 191, 0.3);
+        color: var(--teal);
+      }
+      .icon-row h3 { margin-bottom: 6px; }
+
+      .code-bits {
+        display: grid;
+        gap: 12px;
+      }
+      @media (min-width: 800px) {
+        .code-bits { grid-template-columns: 1fr 1fr; }
+      }
+      .code-bits article { padding: 18px 18px 20px; }
+      .code-bits h3 { margin-bottom: 8px; font-size: 17px; }
+
+      .learnings {
+        padding: 22px 22px 24px;
+        max-width: 52rem;
+      }
+
+      .repo-link {
+        display: inline-flex;
+        margin-top: 14px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        color: #0b1426;
+        background: var(--amber);
+        transition: filter 0.15s ease, transform 0.15s ease;
+      }
+      .repo-link:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+      }
+
+      footer {
+        margin-top: 64px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        text-align: center;
+        font-size: 13px;
+        color: rgba(148, 163, 184, 0.65);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true">
+      <div class="blob blob-a"></div>
+      <div class="blob blob-b"></div>
+    </div>
+
+    <div class="wrap">
+      <a class="back" href="./#/?section=projects">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Back to Projects
+      </a>
+
+      <header>
+        <div class="kicker">Mobile programming case study</div>
+        <h1><span class="name">Android Zoo Directory</span></h1>
+        <p class="lead">
+          A native Android app from my mobile programming class at Cal State East Bay — a scrollable
+          animal list, detail screens, and a warning dialog before the scariest exhibit.
+        </p>
+      </header>
+
+      <section class="section" aria-labelledby="overview-heading">
+        <h2 id="overview-heading">Overview</h2>
+        <div class="overview">
+          <div class="card overview-main">
+            <div>
+              <h3>Problem</h3>
+              <p>
+                Class needed a small but complete Android app: show a set of animals, open a detail
+                screen for each one, pass data between activities, and handle a special case with a
+                confirmation dialog. It also needed an information screen and solid project structure —
+                not a single messy activity.
+              </p>
+            </div>
+            <div>
+              <h3>Solution</h3>
+              <p>
+                I built ZooDirectory with a RecyclerView list, a custom adapter, Java model and detail
+                classes, a Kotlin main activity, and separate screens for animal details and zoo info.
+                Tapping the last animal (Tiger) asks for confirmation before opening the detail view.
+              </p>
+            </div>
+          </div>
+          <aside class="card side" aria-label="Project details">
+            <div class="side-item">
+              <div class="side-label">Role</div>
+              <div class="side-value">Student developer — Cal State East Bay mobile programming</div>
+            </div>
+            <div class="side-item">
+              <div class="side-label">App</div>
+              <div class="side-value">ZooDirectory (edu.csueb.android.zoodirectory)</div>
+            </div>
+            <div class="side-item">
+              <div class="side-label">Tools</div>
+              <div class="side-value">Android Studio, Java, Kotlin, Android SDK, Gradle</div>
+            </div>
+            <div class="side-item">
+              <div class="side-label">Catalog</div>
+              <div class="side-value">5 animals with thumbnail + large images</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="approach-heading">
+        <h2 id="approach-heading">Our approach</h2>
+        <div class="approach">
+          <article class="card approach-card">
+            <div class="approach-num">01</div>
+            <h3>Model</h3>
+            <ol>
+              <li>Defined an Animal class with name, description, and two image ids.</li>
+              <li>Loaded five animals in MainActivity (Elephant through Tiger).</li>
+              <li>Paired each animal with thumbnail and large drawable assets.</li>
+            </ol>
+          </article>
+          <article class="card approach-card">
+            <div class="approach-num">02</div>
+            <h3>List UI</h3>
+            <ol>
+              <li>Used RecyclerView with a linear layout manager.</li>
+              <li>Built AnimalAdapter and animal_item.xml for row layout.</li>
+              <li>Bound name + thumbnail, then handled row taps.</li>
+            </ol>
+          </article>
+          <article class="card approach-card">
+            <div class="approach-num">03</div>
+            <h3>Navigation</h3>
+            <ol>
+              <li>Opened AnimalDetailActivity with Intent extras.</li>
+              <li>Added a warning AlertDialog for the last list item.</li>
+              <li>Wired an options menu to Zoo Info and Uninstall.</li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="contrib-heading">
+        <h2 id="contrib-heading">My contribution</h2>
+        <div class="card contrib">
+          <p>
+            I implemented the full app: layouts in XML, the Animal model, RecyclerView adapter,
+            list-to-detail navigation, the scary-animal warning dialog, the zoo information screen
+            with a dial intent, and the overflow menu. The project mixes Kotlin for MainActivity and
+            Java for the model, adapter, and secondary activities — matching how many Android apps
+            grow over time.
+          </p>
+          <a
+            class="repo-link"
+            href="https://github.com/mmannat/android-zoo-directory"
+            target="_blank"
+            rel="noopener noreferrer"
+            >View code on GitHub</a
+          >
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="flow-heading">
+        <h2 id="flow-heading">App flow</h2>
+        <div class="flow">
+          <article class="card flow-card">
+            <h3>1. Animal list</h3>
+            <p>MainActivity shows a scrollable RecyclerView of five animals with thumbnails and names.</p>
+          </article>
+          <article class="card flow-card">
+            <h3>2. Detail screen</h3>
+            <p>AnimalDetailActivity reads name, description, and large image id from the Intent and lays them out.</p>
+          </article>
+          <article class="card flow-card">
+            <h3>3. Zoo info &amp; menu</h3>
+            <p>Information opens ZooInfoActivity (“My Awesome Zoo” + call link). Uninstall launches the system delete-package flow.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="animals-heading">
+        <h2 id="animals-heading">The exhibits</h2>
+        <p style="margin-bottom: 16px; max-width: 40rem;">
+          Each row in the list uses a thumbnail. The detail screen swaps in the larger image for the same animal.
+        </p>
+        <div class="animal-grid">
+          <article class="card animal-card">
+            <img src="zoo/elephant_thumb.png" alt="Elephant thumbnail" width="72" height="72" loading="lazy" />
+            <strong>Elephant</strong>
+            <span>Large mammal with trunk</span>
+          </article>
+          <article class="card animal-card">
+            <img src="zoo/lion_thumb.png" alt="Lion thumbnail" width="72" height="72" loading="lazy" />
+            <strong>Lion</strong>
+            <span>King of the jungle</span>
+          </article>
+          <article class="card animal-card">
+            <img src="zoo/giraffe_thumb.png" alt="Giraffe thumbnail" width="72" height="72" loading="lazy" />
+            <strong>Giraffe</strong>
+            <span>Tallest land animal</span>
+          </article>
+          <article class="card animal-card">
+            <img src="zoo/monkey_thumb.png" alt="Monkey thumbnail" width="72" height="72" loading="lazy" />
+            <strong>Monkey</strong>
+            <span>Playful primate</span>
+          </article>
+          <article class="card animal-card">
+            <img src="zoo/tiger_thumb.png" alt="Tiger thumbnail" width="72" height="72" loading="lazy" />
+            <strong>Tiger</strong>
+            <span>Fierce striped cat — opens behind a warning</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="highlights-heading">
+        <h2 id="highlights-heading">Design highlights</h2>
+
+        <article class="card highlight">
+          <div class="highlight-copy">
+            <div class="highlight-num">01 — List rows</div>
+            <h3>Thumbnail + name in a simple row</h3>
+            <p>
+              animal_item.xml is a horizontal row: 64dp image and 18sp name. The adapter inflates that
+              layout and binds each Animal so the list stays light and easy to scan.
+            </p>
+          </div>
+          <figure class="shot">
+            <div class="shot-pair">
+              <img src="zoo/elephant_thumb.png" alt="Elephant list thumbnail" width="120" height="120" loading="lazy" />
+              <img src="zoo/lion_thumb.png" alt="Lion list thumbnail" width="120" height="120" loading="lazy" />
+              <img src="zoo/giraffe_thumb.png" alt="Giraffe list thumbnail" width="120" height="120" loading="lazy" />
+            </div>
+          </figure>
+        </article>
+
+        <article class="card highlight reverse">
+          <div class="highlight-copy">
+            <div class="highlight-num">02 — Detail screen</div>
+            <h3>Larger image and full description</h3>
+            <p>
+              AnimalDetailActivity pulls extras from the Intent, then shows a bold title, a 250dp
+              center-cropped image, and the short description underneath — a clear list-to-detail pattern.
+            </p>
+          </div>
+          <figure class="shot">
+            <img src="zoo/elephant_large.png" alt="Elephant large detail image" width="320" height="240" loading="lazy" />
+          </figure>
+        </article>
+
+        <article class="card highlight">
+          <div class="highlight-copy">
+            <div class="highlight-num">03 — Conditional warning</div>
+            <h3>Confirm before the Tiger</h3>
+            <p>
+              The last item in the list does not open immediately. An AlertDialog asks “This animal is
+              very scary. Proceed?” with Yes / No. Yes continues to the detail screen; No dismisses.
+              That edge case shows event handling beyond a plain click listener.
+            </p>
+          </div>
+          <figure class="shot">
+            <div class="shot-pair">
+              <img src="zoo/tiger_thumb.png" alt="Tiger thumbnail used for the warning flow" width="120" height="120" loading="lazy" />
+              <img src="zoo/tiger_large.png" alt="Tiger large image shown after confirming the warning" width="200" height="160" loading="lazy" />
+            </div>
+          </figure>
+        </article>
+
+        <article class="card highlight reverse">
+          <div class="highlight-copy">
+            <div class="highlight-num">04 — Zoo information</div>
+            <h3>Info screen with a dial action</h3>
+            <p>
+              The Information menu item opens ZooInfoActivity with the title “My Awesome Zoo” and a
+              tappable phone line. Tapping starts ACTION_DIAL with tel:8888888 so the system phone UI
+              can place the call.
+            </p>
+          </div>
+          <figure class="shot">
+            <div class="shot-pair">
+              <img src="zoo/monkey_large.png" alt="Monkey large image from the exhibit set" width="200" height="160" loading="lazy" />
+              <img src="zoo/lion_large.png" alt="Lion large image from the exhibit set" width="200" height="160" loading="lazy" />
+            </div>
+          </figure>
+        </article>
+      </section>
+
+      <section class="section" aria-labelledby="thinking-heading">
+        <h2 id="thinking-heading">Technical decisions</h2>
+        <div class="icon-list">
+          <article class="card icon-row">
+            <div class="icon-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <h3>RecyclerView instead of a static list</h3>
+              <p>A custom adapter keeps row creation efficient and makes it easy to add more animals later without rewriting the layout.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <h3>Separate model, adapter, and activities</h3>
+              <p>Animal.java holds data. AnimalAdapter binds UI. Main, Detail, and Zoo Info stay focused — easier to read and grade.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div>
+              <h3>Intent extras for list → detail</h3>
+              <p>Name, description, and imageId travel with the Intent so the detail screen does not need a shared global object.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 4.3L2.8 17a2 2 0 001.7 3h15a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z"/></svg>
+            </div>
+            <div>
+              <h3>AlertDialog for the edge case</h3>
+              <p>Only the last animal triggers a warning. That keeps normal taps fast while proving dialog and callback handling.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a7 7 0 017 7c0 5-7 13-7 13S5 14 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            </div>
+            <div>
+              <h3>Two image sizes per animal</h3>
+              <p>Thumbnails keep the list light. Large drawables give the detail screen a clearer hero without stretching a tiny asset.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h10M4 17h13" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <h3>Options menu for secondary actions</h3>
+              <p>Information and Uninstall sit in the overflow menu so the main screen stays focused on browsing animals.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="stack-heading">
+        <h2 id="stack-heading">What’s in the project</h2>
+        <div class="code-bits">
+          <article class="card">
+            <h3>Languages &amp; structure</h3>
+            <p>
+              MainActivity is Kotlin. Animal, AnimalAdapter, AnimalDetailActivity, and ZooInfoActivity
+              are Java. Layouts and menus live in XML under res/. Package namespace:
+              edu.csueb.android.zoodirectory.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Build targets</h3>
+            <p>
+              Gradle Android app with minSdk 24 and target/compile SDK 35. Open in Android Studio,
+              sync Gradle, then run on an emulator or device.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="outcome-heading">
+        <h2 id="outcome-heading">Outcome</h2>
+        <div class="icon-list">
+          <article class="card icon-row">
+            <div class="icon-mark teal" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div>
+              <h3>Working list → detail flow</h3>
+              <p>Five animals browse and open detail screens with the right name, copy, and image.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark teal" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+            </div>
+            <div>
+              <h3>Edge-case dialog handled</h3>
+              <p>Tiger requires an explicit Yes before the detail activity starts.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark teal" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4z"/><path d="M8 10h8M8 14h5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <h3>Menu actions beyond the list</h3>
+              <p>Zoo info with dial intent, plus uninstall via ACTION_DELETE on the app package.</p>
+            </div>
+          </article>
+          <article class="card icon-row">
+            <div class="icon-mark teal" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/></svg>
+            </div>
+            <div>
+              <h3>Course-ready Android structure</h3>
+              <p>Proper activities, adapter, resources, and Gradle config under a CSUEB package name.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="learnings-heading">
+        <h2 id="learnings-heading">Key learnings</h2>
+        <div class="card learnings">
+          <p>
+            Mobile UI is mostly about clear navigation and clean data handoffs. RecyclerView plus a
+            custom adapter keeps lists maintainable. Intents keep screens loosely coupled. A single
+            AlertDialog on one row is enough to show that not every tap should behave the same.
+            Mixing Kotlin and Java in one app is normal — what matters is a readable package layout
+            and layouts that match the flow you want users to take.
+          </p>
+        </div>
+      </section>
+
+      <footer>© <span id="yr"></span> Mannat. All rights reserved.</footer>
+    </div>
+    <script>
+      document.getElementById("yr").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
